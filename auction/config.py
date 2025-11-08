@@ -1,6 +1,7 @@
 from typing import Dict
-
-from enum import Enum
+from pydantic import BaseModel, Field, ValidationError
+from pydantic import field_validator
+from enum import Enum, auto
 
 Group1 = {"Somalia": 1601, "Mozambique": 1700, "Chad": 2962}
 
@@ -40,126 +41,214 @@ def cluster(gno: Dict[str, int]) -> Dict:
     return gno
 
 
-class GlobalResources(Enum):
+from dataclasses import dataclass
+
+
+@dataclass
+class Resource:
+    """Represents a natural resource with its quantity and unit of measurement."""
+
+    amount: float
+    unit: str
+
+
+class GlobalResources(str):
     """
-    An enumeration of all natural resources, minerals, commodities,
+    String-based class for all natural resources, minerals, commodities,
     and energy types mentioned in the comparative analysis report.
     """
 
-    # -- MINERALS, METALS, & ELEMENTS --
-    BAUXITE = auto()
-    BENTONITE = auto()
-    BERYLLIUM = auto()
-    BISMUTH = auto()
-    BORON = auto()
-    BROMINE = auto()
-    CADMIUM = auto()
-    CEMENT = auto()
-    CHROMITE = auto()
-    CHROMIUM = auto()
-    CLAY = auto()
-    CLAYS = auto()
-    COBALT = auto()
-    COLUMBITE = auto()
-    COPPER = auto()
-    DIAMONDS = auto()
-    DIATOMITE = auto()
-    DOLOMITE = auto()
-    FELDSPAR = auto()
-    FLUORSPAR = auto()
-    GALLIUM = auto()
-    GARNET = auto()
-    GEMSTONES = auto()
-    GOLD = auto()
-    GRAPHITE = auto()
-    GRAVEL = auto()
-    GYPSUM = auto()
-    ILMENITE = auto()
-    INDIUM = auto()
-    IODINE = auto()
-    IRIDIUM = auto()
-    IRON = auto()
-    IRON_ORE = auto()
-    IRON_OXIDE_PIGMENTS = auto()
-    KAOLIN = auto()
-    KAOLINITE = auto()
-    LEAD = auto()
-    LIME = auto()
-    LIMESTONE = auto()
-    LITHIUM = auto()
-    MAGNESIUM = auto()
-    MANGANESE = auto()
-    MARBLE = auto()
-    MERCURY = auto()
-    MICA = auto()
-    MINERAL_SANDS = auto()
-    MOLYBDENUM = auto()
-    NATRON = auto()
-    NICKEL = auto()
-    NIOBIUM = auto()
-    NITROGEN = auto()
-    PALLADIUM = auto()
-    PHOSPHATE_ROCK = auto()
-    PHOSPHATES = auto()
-    PIG_IRON = auto()
-    PLATINUM = auto()
-    PLATINUM_GROUP_METALS = auto()
-    POTASH = auto()
-    PUMICE = auto()
-    QUARTZ = auto()
-    RARE_EARTH_ELEMENTS = auto()
-    REFINED_SELENIUM = auto()
-    RHENIUM = auto()
-    RHODIUM = auto()
-    RUBIES = auto()
-    RUTHENIUM = auto()
-    RUTILE = auto()
-    SALT = auto()
-    SAND = auto()
-    SELENIUM = auto()
-    SILICON = auto()
-    SILVER = auto()
-    SODA_ASH = auto()
-    STONE = auto()
-    SULFUR = auto()
-    TALC = auto()
-    TANTALUM = auto()
-    TELLURIUM = auto()
-    THORIUM = auto()
-    TIN = auto()
-    TITANIUM = auto()
-    TITANIUM_MINERALS = auto()
-    TOURMALINES = auto()
-    TUNGSTEN = auto()
-    URANIUM = auto()
-    VANADIUM = auto()
-    VERMICULITE = auto()
-    ZEOLITES = auto()
-    ZINC = auto()
-    ZIRCONIUM = auto()
+    PETROLEUM = "PETROLEUM"
+    NATURAL_GAS = "NATURAL_GAS"
+    COAL = "COAL"
+    URANIUM = "URANIUM"
+    GOLD = "GOLD"
+    NICKEL = "NICKEL"
+    IRON_ORE = "IRON_ORE"
+    DIAMONDS = "DIAMONDS"
+    COPPER = "COPPER"
+    TIN = "TIN"
+    BAUXITE = "BAUXITE"
+    COBALT = "COBALT"
+    LITHIUM = "LITHIUM"
+    GRAPHITE = "GRAPHITE"
+    PALLADIUM = "PALLADIUM"
+    PLATINUM = "PLATINUM"
+    TUNGSTEN = "TUNGSTEN"
+    NIOBIUM = "NIOBIUM"
+    HYDROPOWER = "HYDROPOWER"
+    RARE_EARTH_ELEMENTS = "RARE_EARTH_ELEMENTS"
 
-    # -- ENERGY RESOURCES --
-    BIOENERGY = auto()
-    BIOMASS = auto()
-    BIOMASS_AND_WASTE = auto()
-    BROWN_COAL = auto()
-    COAL = auto()
-    CRUDE_PETROLEUM = auto()
-    GEOTHERMAL = auto()
-    GREEN_HYDROGEN = auto()
-    HYDROPOWER = auto()
-    LIGNITE = auto()
-    LIQUEFIED_NATURAL_GAS = auto()
-    MINERAL_FUELS = auto()
-    NATURAL_GAS = auto()
-    NUCLEAR = auto()
-    OFFSHORE_WIND = auto()
-    OIL = auto()
-    ONSHORE_WIND = auto()
-    PEAT = auto()
-    PETROLEUM = auto()
-    PETROLEUM_GAS = auto()
-    REFINED_PETROLEUM = auto()
-    SOLAR = auto()
-    SOLAR_PV = auto()
-    WIND = auto()
+
+# Dictionary mapping countries to their resources with amounts and units
+country_resources: dict[str, dict[str, Resource]] = {
+    "Russia": {
+        "PETROLEUM": Resource(80.0, "billion barrels"),
+        "NATURAL_GAS": Resource(47.8, "trillion cubic meters"),
+        "COAL": Resource(160.0, "billion tonnes"),
+        "URANIUM": Resource(0.61, "million tonnes"),
+        "GOLD": Resource(13.0, "thousand tonnes"),
+        "NICKEL": Resource(8.8, "million tonnes"),
+        "IRON_ORE": Resource(47.0, "billion tonnes"),
+        "DIAMONDS": Resource(2.0, "million carats annually"),
+        "COPPER": Resource(1.4, "million tonnes"),
+        "TIN": Resource(0.15, "million tonnes"),
+        "BAUXITE": Resource(0.5, "million tonnes"),
+        "COBALT": Resource(0.03, "million tonnes"),
+        "PALLADIUM": Resource(0.08, "million tonnes"),
+        "PLATINUM": Resource(0.02, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.01, "million tonnes"),
+        "TUNGSTEN": Resource(0.03, "million tonnes"),
+        "NIOBIUM": Resource(0.05, "million tonnes"),
+    },
+    "Kuwait": {
+        "PETROLEUM": Resource(104.0, "billion barrels"),
+        "NATURAL_GAS": Resource(1.8, "trillion cubic meters"),
+    },
+    "Nigeria": {
+        "PETROLEUM": Resource(37.0, "billion barrels"),
+        "NATURAL_GAS": Resource(5.3, "trillion cubic meters"),
+        "COAL": Resource(0.5, "billion tonnes"),
+        "TIN": Resource(0.25, "million tonnes"),
+    },
+    "Chad": {
+        "PETROLEUM": Resource(1.5, "billion barrels"),
+        "URANIUM": Resource(0.05, "million tonnes"),
+        "GOLD": Resource(0.15, "thousand tonnes"),
+    },
+    "Iran": {
+        "PETROLEUM": Resource(155.6, "billion barrels"),
+        "NATURAL_GAS": Resource(33.8, "trillion cubic meters"),
+        "URANIUM": Resource(0.25, "million tonnes"),
+        "IRON_ORE": Resource(3.5, "billion tonnes"),
+        "COPPER": Resource(0.8, "million tonnes"),
+    },
+    "Brazil": {
+        "PETROLEUM": Resource(13.0, "billion barrels"),
+        "URANIUM": Resource(0.28, "million tonnes"),
+        "GOLD": Resource(2.9, "thousand tonnes"),
+        "NICKEL": Resource(5.0, "million tonnes"),
+        "IRON_ORE": Resource(98.0, "billion tonnes"),
+        "PLATINUM": Resource(0.01, "million tonnes"),
+        "BAUXITE": Resource(14.0, "million tonnes"),
+        "TIN": Resource(0.08, "million tonnes"),
+        "LITHIUM": Resource(0.26, "million tonnes"),
+        "GRAPHITE": Resource(0.15, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.02, "million tonnes"),
+        "NIOBIUM": Resource(0.1, "million tonnes"),
+        "HYDROPOWER": Resource(150.0, "GW capacity"),
+    },
+    "Oman": {
+        "PETROLEUM": Resource(5.0, "billion barrels"),
+        "NATURAL_GAS": Resource(0.9, "trillion cubic meters"),
+        "GOLD": Resource(0.3, "thousand tonnes"),
+    },
+    "United States": {
+        "PETROLEUM": Resource(35.0, "billion barrels"),
+        "NATURAL_GAS": Resource(12.0, "trillion cubic meters"),
+        "COBALT": Resource(0.01, "million tonnes"),
+        "LITHIUM": Resource(0.98, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.01, "million tonnes"),
+        "GRAPHITE": Resource(0.05, "million tonnes"),
+    },
+    "Saudi Arabia": {
+        "PETROLEUM": Resource(267.0, "billion barrels"),
+        "GOLD": Resource(3.5, "thousand tonnes"),
+    },
+    "Somalia": {
+        "NATURAL_GAS": Resource(0.6, "trillion cubic meters"),
+        "URANIUM": Resource(0.02, "million tonnes"),
+        "IRON_ORE": Resource(0.5, "billion tonnes"),
+        "COPPER": Resource(0.1, "million tonnes"),
+        "TIN": Resource(0.05, "million tonnes"),
+        "BAUXITE": Resource(1.2, "million tonnes"),
+    },
+    "Bangladesh": {
+        "NATURAL_GAS": Resource(0.2, "trillion cubic meters"),
+        "COAL": Resource(3.3, "billion tonnes"),
+    },
+    "Germany": {
+        "COAL": Resource(46.0, "billion tonnes"),
+        "URANIUM": Resource(0.01, "million tonnes"),
+        "NICKEL": Resource(0.2, "million tonnes"),
+        "IRON_ORE": Resource(1.0, "billion tonnes"),
+        "COPPER": Resource(0.55, "million tonnes"),
+        "GRAPHITE": Resource(0.08, "million tonnes"),
+    },
+    "France": {
+        "COAL": Resource(0.1, "billion tonnes"),
+        "URANIUM": Resource(0.4, "million tonnes"),
+        "GOLD": Resource(0.8, "thousand tonnes"),
+        "IRON_ORE": Resource(2.0, "billion tonnes"),
+        "BAUXITE": Resource(0.5, "million tonnes"),
+        "NIOBIUM": Resource(0.02, "million tonnes"),
+    },
+    "Indonesia": {
+        "COAL": Resource(104.0, "billion tonnes"),
+        "NICKEL": Resource(13.0, "million tonnes"),
+        "COPPER": Resource(0.9, "million tonnes"),
+        "TIN": Resource(1.1, "million tonnes"),
+        "BAUXITE": Resource(1.5, "million tonnes"),
+        "COBALT": Resource(0.1, "million tonnes"),
+    },
+    "South Africa": {
+        "COAL": Resource(128.0, "billion tonnes"),
+        "GOLD": Resource(4.2, "thousand tonnes"),
+        "NICKEL": Resource(3.5, "million tonnes"),
+        "IRON_ORE": Resource(29.0, "billion tonnes"),
+        "DIAMONDS": Resource(9.0, "million carats annually"),
+        "COPPER": Resource(0.7, "million tonnes"),
+        "COBALT": Resource(0.05, "million tonnes"),
+        "PALLADIUM": Resource(0.08, "million tonnes"),
+        "PLATINUM": Resource(0.06, "million tonnes"),
+    },
+    "Pakistan": {
+        "COAL": Resource(3.8, "billion tonnes"),
+        "GOLD": Resource(0.5, "thousand tonnes"),
+        "IRON_ORE": Resource(0.4, "billion tonnes"),
+        "COPPER": Resource(0.3, "million tonnes"),
+    },
+    "Slovakia": {
+        "NICKEL": Resource(0.15, "million tonnes"),
+        "IRON_ORE": Resource(0.8, "billion tonnes"),
+        "COBALT": Resource(0.02, "million tonnes"),
+    },
+    "Chile": {
+        "COPPER": Resource(18.0, "million tonnes"),
+        "LITHIUM": Resource(9.0, "million tonnes"),
+    },
+    "Vietnam": {
+        "TIN": Resource(0.4, "million tonnes"),
+        "TUNGSTEN": Resource(0.08, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.01, "million tonnes"),
+    },
+    "India": {
+        "BAUXITE": Resource(4.0, "million tonnes"),
+        "IRON_ORE": Resource(8.0, "billion tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.01, "million tonnes"),
+    },
+    "Mozambique": {
+        "NATURAL_GAS": Resource(3.5, "trillion cubic meters"),
+        "IRON_ORE": Resource(1.2, "billion tonnes"),
+        "BAUXITE": Resource(0.8, "million tonnes"),
+        "NIOBIUM": Resource(0.08, "million tonnes"),
+    },
+    "Luxembourg": {
+        "IRON_ORE": Resource(0.02, "billion tonnes"),
+    },
+    "French Guiana": {
+        "GOLD": Resource(0.02, "thousand tonnes"),
+    },
+    "Switzerland": {
+        "HYDROPOWER": Resource(18.0, "GW capacity"),
+    },
+    "Sri Lanka": {
+        "GRAPHITE": Resource(0.02, "million tonnes"),
+    },
+    "Kenya": {
+        "HYDROPOWER": Resource(2.0, "GW capacity"),
+    },
+    "Slovenia": {
+        "COAL": Resource(0.1, "billion tonnes"),
+    },
+}
