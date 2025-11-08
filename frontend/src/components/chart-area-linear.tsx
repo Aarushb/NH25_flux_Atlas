@@ -19,6 +19,8 @@ import {
 
 export const description = "A linear area chart";
 
+//
+
 const startingData = [
   { desktop: 186 },
   { desktop: 305 },
