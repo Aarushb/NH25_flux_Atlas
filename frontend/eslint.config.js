@@ -21,6 +21,7 @@ export default defineConfig([
     // for intentionally unused variables/params).
     rules: {
       "no-unused-vars": "off",
+      "no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
