@@ -8,6 +8,8 @@ import {
 } from "react-simple-maps";
 import { geoCentroid } from "d3-geo";
 import type { Feature, Geometry } from "geojson";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 // TopoJSON world data
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -45,38 +47,41 @@ export default function ZoomableWorldMap(): JSX.Element {
   };
 
   return (
-    <div className="p-4">
-      <button
-        onClick={handleReset}
-        className="mb-4 rounded bg-gray-800 px-3 py-1 text-white"
-      >
-        Reset Zoom
-      </button>
-
-      <ComposableMap projection="geoMercator">
-        <ZoomableGroup
-          center={position.coordinates}
-          zoom={position.zoom}
-          onMoveEnd={(pos: MapPosition) => setPosition(pos)}
-        >
-          <Geographies geography={geoUrl}>
-            {({ geographies }: { geographies: GeographyFeature[] }) =>
-              geographies.map((geo) => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  onClick={() => handleCountryClick(geo)}
-                  style={{
-                    default: { fill: "#D6D6DA", outline: "none" },
-                    hover: { fill: "#F53", outline: "none" },
-                    pressed: { fill: "#E42", outline: "none" },
-                  }}
-                />
-              ))
-            }
-          </Geographies>
-        </ZoomableGroup>
-      </ComposableMap>
-    </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Interactive World Map</CardTitle>
+          <Button onClick={handleReset} variant="outline" size="sm">
+            Reset Zoom
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ComposableMap projection="geoMercator">
+          <ZoomableGroup
+            center={position.coordinates}
+            zoom={position.zoom}
+            onMoveEnd={(pos: MapPosition) => setPosition(pos)}
+          >
+            <Geographies geography={geoUrl}>
+              {({ geographies }: { geographies: GeographyFeature[] }) =>
+                geographies.map((geo) => (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    onClick={() => handleCountryClick(geo)}
+                    style={{
+                      default: { fill: "#D6D6DA", outline: "none" },
+                      hover: { fill: "#F53", outline: "none" },
+                      pressed: { fill: "#E42", outline: "none" },
+                    }}
+                  />
+                ))
+              }
+            </Geographies>
+          </ZoomableGroup>
+        </ComposableMap>
+      </CardContent>
+    </Card>
   );
 }

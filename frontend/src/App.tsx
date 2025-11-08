@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Component } from "@/components/example-chart";
-import { ChartAreaLinear } from "./components/chart-area-linear";
+import { CustomD3Chart } from "./components/chart-area-linear";
 import ZoomableWorldMap from "./components/zoomable-world-map";
+import { LatestEvents } from "./components/latest-events";
 import {
   SidebarProvider,
   SidebarInset,
@@ -11,9 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<"home" | "charts" | "map">(
-    "home"
-  );
+  const [currentPage, setCurrentPage] = useState<string>("home");
 
   return (
     <SidebarProvider>
@@ -34,9 +33,10 @@ function App() {
           {currentPage === "home" && (
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <ChartAreaLinear />
+                <CustomD3Chart />
                 <ZoomableWorldMap />
               </div>
+              <LatestEvents />
             </div>
           )}
 

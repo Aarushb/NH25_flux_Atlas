@@ -12,15 +12,15 @@ import {
 } from "@/components/ui/sidebar";
 
 interface AppSidebarProps {
-  onNavigate: (page: "home" | "charts" | "map") => void;
+  onNavigate: (page: string) => void;
   currentPage: string;
 }
 
 export function AppSidebar({ onNavigate, currentPage }: AppSidebarProps) {
   const menuItems = [
-    { id: "home", icon: Home, label: "Dashboard" },
-    { id: "charts", icon: BarChart3, label: "Charts" },
-    { id: "map", icon: Map, label: "World Map" },
+    { id: "home", icon: Home, label: "Aluminum" },
+    { id: "charts", icon: BarChart3, label: "Gold" },
+    { id: "map", icon: Map, label: "Natural Gas" },
   ] as const;
 
   return (
