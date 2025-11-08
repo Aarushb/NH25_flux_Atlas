@@ -1,4 +1,4 @@
-from models.resource import Resource
+from resource import Resource
 
 country_resources: dict[str, dict[str, Resource]] = {
     "Russia": {
