@@ -4,31 +4,32 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.config import Config
 from app.models.database import Base
-from app.routes import countries, orders, market
+from app.routes import groups, countries, resources, auctions
 
 engine = create_engine(Config.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="EcoTech Market API", version="1.0.0")
+app = FastAPI(title="EcoTech Auction API", version="2.0.0")
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+app.include_router(groups.router)
 app.include_router(countries.router)
-app.include_router(orders.router)
-app.include_router(market.router)
+app.include_router(resources.router)
+app.include_router(auctions.router)
 
 @app.get("/")
 def root():
-    return {"message": "EcoTech Market API", "version": "1.0.0"}
+    return {"message": "EcoTech Auction API", "version": "2.0.0"}
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy"}
