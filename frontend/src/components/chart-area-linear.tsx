@@ -61,7 +61,7 @@ export function CustomD3Chart() {
 
     const yScale = d3
       .scaleLinear()
-      .domain([0, d3.max(data, (d) => d.value) || 400])
+      .domain([0, 400]) // Fixed scale from 0 to 400
       .range([chartHeight, 0]);
 
     // Area generator
@@ -149,7 +149,10 @@ export function CustomD3Chart() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Live Stock Chart (D3.js)</CardTitle>
+        <CardTitle>
+          Live Stock Chart - Current Value: $
+          {data[data.length - 1].value.toFixed(2)}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <svg
