@@ -3,14 +3,12 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 type DialogProps = {
   buttonText: string;
@@ -23,7 +21,7 @@ export function DialogDemo({ buttonText }: DialogProps) {
         <DialogTrigger asChild>
           <Button variant="outline">{buttonText}</Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[325px]">
+  <DialogContent className="sm:max-w-[325px] glass">
           <DialogHeader>
             <DialogTitle>Place your Bid</DialogTitle>
           </DialogHeader>

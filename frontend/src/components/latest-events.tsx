@@ -108,7 +108,7 @@ export function LatestEvents() {
   };
 
   return (
-    <Card>
+    <Card className="card">
       <CardHeader>
         <CardTitle>Latest Global Events</CardTitle>
         <CardDescription>
@@ -120,7 +120,7 @@ export function LatestEvents() {
           {events.map((event, index) => (
             <Card
               key={event.id}
-              className="transition-all duration-500 ease-out"
+              className="transition-all duration-500 ease-out glass"
               style={{
                 animation: index === 0 ? "slideDown 0.5s ease-out" : undefined,
               }}

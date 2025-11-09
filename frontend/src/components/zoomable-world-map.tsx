@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import type { JSX } from "react";
 import {
   ComposableMap,
@@ -8,8 +8,7 @@ import {
 } from "react-simple-maps";
 import { geoCentroid, geoArea } from "d3-geo";
 import type { Feature, Geometry } from "geojson";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 // TopoJSON world data
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -73,7 +72,7 @@ export default function ZoomableWorldMap({
     setTimeout(() => setIsAnimating(false), 1000);
   };
 
-  const handleReset = (): void => {
+  const handleReset = useCallback((): void => {
     setValue("World");
     setIsAnimating(true);
     setPosition({
@@ -81,7 +80,7 @@ export default function ZoomableWorldMap({
       zoom: 1.2,
     });
     setTimeout(() => setIsAnimating(false), 1000);
-  };
+  }, [setValue]);
 
   // Auto-zoom when value changes
   useEffect(() => {
@@ -95,10 +94,10 @@ export default function ZoomableWorldMap({
     if (selectedGeo) {
       handleCountryClick(selectedGeo);
     }
-  }, [value, geographiesData]);
+  }, [value, geographiesData, handleReset]);
 
   return (
-    <Card className="p-0 overflow-hidden">
+    <Card className="p-0 overflow-hidden card">
       <CardContent className="p-0">
         <div
           style={{
@@ -128,40 +127,35 @@ export default function ZoomableWorldMap({
                     setGeographiesData(geographies);
                   }
 
-                  return geographies.map((geo) => (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      style={{
-                        default: {
-                          // Change selected country color here (currently #6B7280 - gray-500)
-                          fill:
-                            geo.properties.name === value
-                              ? "#6B7280"
-                              : "#D6D6DA",
-                          outline: "none",
-                          cursor: "default",
-                          pointerEvents: "none",
-                        },
-                        hover: {
-                          fill:
-                            geo.properties.name === value
-                              ? "#6B7280"
-                              : "#D6D6DA",
-                          outline: "none",
-                          pointerEvents: "none",
-                        },
-                        pressed: {
-                          fill:
-                            geo.properties.name === value
-                              ? "#6B7280"
-                              : "#D6D6DA",
-                          outline: "none",
-                          pointerEvents: "none",
-                        },
-                      }}
-                    />
-                  ));
+                  return geographies.map((geo) => {
+                    const isSelected = geo.properties.name === value;
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        onClick={() => handleCountryClick(geo)}
+                        className={isSelected ? "geo selected-geo" : "geo"}
+                        style={{
+                          default: {
+                            fill: "#0f2623",
+                            outline: "none",
+                            cursor: "pointer",
+                            pointerEvents: "auto",
+                          },
+                          hover: {
+                            outline: "none",
+                            cursor: "pointer",
+                            pointerEvents: "auto",
+                          },
+                          pressed: {
+                            outline: "none",
+                            cursor: "pointer",
+                            pointerEvents: "auto",
+                          },
+                        }}
+                      />
+                    );
+                  });
                 }}
               </Geographies>
             </ZoomableGroup>

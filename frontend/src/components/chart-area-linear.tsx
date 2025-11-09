@@ -147,7 +147,7 @@ export function CustomD3Chart() {
   }, [data, margin.top, margin.left, margin.right, margin.bottom, WINDOW_SIZE]);
 
   return (
-    <Card>
+    <Card className="card">
       <CardHeader>
         <CardTitle>
           Live Stock Chart - Current Value: $
