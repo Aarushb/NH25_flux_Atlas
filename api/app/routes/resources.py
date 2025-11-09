@@ -31,7 +31,7 @@ def list_resources(db: Session = Depends(get_db)):
 
 @router.get("/{resource_id}", response_model=ResourceResponse)
 def get_resource(resource_id: UUID, db: Session = Depends(get_db)):
-    Route repo = ResourceRepository(db)
+    repo = ResourceRepository(db)
     resource = repo.get(resource_id)
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
