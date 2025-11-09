@@ -4,6 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 import math
+import time
 
 # --- Models & Data ---
 from models.resourcess import Resource
@@ -67,7 +68,7 @@ class AuctionManager:
 
 # --- MAIN SIMULATION LOGIC ---
 
-def run_simulation(seller: Country, resource_name: str, total_quantity: float, base_price: float):
+def run_simulation(seller: Country, resource_name: str, total_quantity: float, base_price: float, verbosity: str = "verbose"):
     """
     Runs the full Vickrey (second-price) auction simulation.
     
@@ -76,58 +77,79 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
     - `cluster.py`: To call `assign_auction_quantity` which calculates batches.
     - `country.py`: To call `get_resource`/`get_demand` and update `budget`/`resources`.
     - `auction_manager.py`: To call `laplace` for bid decisions.
+    
+    Args:
+        seller: The country selling the resource
+        resource_name: Name of the resource being auctioned
+        total_quantity: Total amount of resource to auction
+        base_price: Reserve/base price per unit
+        verbosity: Logging level - "none", "concise", or "verbose" (default: "verbose")
     """
-    print(f"--- STARTING SIMULATION ---")
-    print(f"  Seller: {seller.name}")
-    print(f"  Resource: {resource_name}")
-    print(f"  Total Quantity for Auction: {total_quantity}")
-    print(f"  Base (Reserve) Price: ${base_price}B per unit")
+    if verbosity != "none":
+        print(f"--- STARTING SIMULATION ---")
+        print(f"  Seller: {seller.name}")
+        print(f"  Resource: {resource_name}")
+        print(f"  Total Quantity for Auction: {total_quantity}")
+        print(f"  Base (Reserve) Price: ${base_price}B per unit")
     
     seller_resource = seller.get_resource(resource_name)
 
     if not seller_resource or seller_resource.amount < total_quantity:
-        print(f"\nSIMULATION FAILED: Seller does not have enough {resource_name} to auction.")
-        print(f"  Has: {seller_resource.amount if seller_resource else 0}, Needs: {total_quantity}")
+        if verbosity != "none":
+            print(f"\nSIMULATION FAILED: Seller does not have enough {resource_name} to auction.")
+            print(f"  Has: {seller_resource.amount if seller_resource else 0}, Needs: {total_quantity}")
         return
 
     resource_unit = seller_resource.unit
     
-    print("\n[Phase 1: Calculating proportional distribution...]")
-    total_countries_in_world = sum(cluster_enum.value.country_count for cluster_enum in CountryClusters)
-    print(f"  Total countries in all clusters: {total_countries_in_world}")
-    print(f"  Distributing {total_quantity} units proportionally.")
+    if verbosity == "verbose":
+        print("\n[Phase 1: Calculating proportional distribution...]")
+        total_countries_in_world = sum(cluster_enum.value.country_count for cluster_enum in CountryClusters)
+        print(f"  Total countries in all clusters: {total_countries_in_world}")
+        print(f"  Distributing {total_quantity} units proportionally.")
 
+    total_countries_in_world = sum(cluster_enum.value.country_count for cluster_enum in CountryClusters)
     for cluster_enum in CountryClusters:
         cluster_info = cluster_enum.value
         cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world)
     
-    print("\n[Phase 2: Verifying batch assignments...]")
-    total_planned_quantity = 0.0
-    for cluster_enum in CountryClusters:
-        cluster_info = cluster_enum.value
-        print(f"  {cluster_info.name:<28}: Assigned {cluster_info.auction_quantity:6.2f} units")
-        total_planned_quantity += cluster_info.auction_quantity
-    print(f"  {'-'*28}: {'-'*6}")
-    print(f"  {'Total Planned Quantity':<28}: {total_planned_quantity:6.2f} (Should match {total_quantity})")
+    if verbosity == "verbose":
+        print("\n[Phase 2: Verifying batch assignments...]")
+        total_planned_quantity = 0.0
+        for cluster_enum in CountryClusters:
+            cluster_info = cluster_enum.value
+            print(f"  {cluster_info.name:<28}: Assigned {cluster_info.auction_quantity:6.2f} units")
+            total_planned_quantity += cluster_info.auction_quantity
+        print(f"  {'-'*28}: {'-'*6}")
+        print(f"  {'Total Planned Quantity':<28}: {total_planned_quantity:6.2f} (Should match {total_quantity})")
 
 
-    print("\n" + "="*70)
-    print("STARTING BATCH AUCTIONS")
-    print("="*70)
+    if verbosity != "none":
+        print("\n" + "="*70)
+        print("STARTING BATCH AUCTIONS")
+        print("="*70)
 
     live_auction_stock = total_quantity
     
     # Determine maximum number of batches across all clusters
     max_batches = max(len(cluster_enum.value.auction_batches) for cluster_enum in CountryClusters)
     
-    print(f"\nTotal batches to process: {max_batches}")
-    print("Processing all clusters batch-by-batch...\n")
+    if verbosity == "verbose":
+        print(f"\nTotal batches to process: {max_batches}")
+        print("Processing all clusters batch-by-batch...\n")
 
     # NEW: Iterate batch-by-batch, then cluster-by-cluster within each batch
     for batch_num in range(1, max_batches + 1):
-        print("\n" + "="*70)
-        print(f"BATCH {batch_num} - PROCESSING ALL CLUSTERS")
-        print("="*70)
+        # Add 2-second pause before each batch (except the first one)
+        if batch_num > 1:
+            time.sleep(2)
+        
+        if verbosity == "verbose":
+            print("\n" + "="*70)
+            print(f"BATCH {batch_num} - PROCESSING ALL CLUSTERS")
+            print("="*70)
+        elif verbosity == "concise":
+            print(f"\n=== BATCH {batch_num} ===")
         
         for cluster_enum in CountryClusters:
             cluster_info = cluster_enum.value
@@ -135,14 +157,19 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
             # Check if this cluster has this batch number
             quantity = cluster_info.get_batch_quantity(batch_num)
             if quantity is None or quantity == 0:
-                print(f"\n[{cluster_info.name}] - No Batch {batch_num}")
+                if verbosity == "verbose":
+                    print(f"\n[{cluster_info.name}] - No Batch {batch_num}")
                 continue
             
-            print(f"\n--- {cluster_info.name} - Batch {batch_num} | Quantity: {quantity:.2f} {resource_unit} ---")
+            if verbosity == "verbose":
+                print(f"\n--- {cluster_info.name} - Batch {batch_num} | Quantity: {quantity:.2f} {resource_unit} ---")
+            elif verbosity == "concise":
+                print(f"\n{cluster_info.name} - Batch {batch_num}:")
 
             if live_auction_stock < quantity:
-                print(f"  SELLER STOCK LOW: Not enough auction stock for this batch (Needs: {quantity:.2f}, Has: {live_auction_stock:.2f}).")
-                print(f"  AUCTION FOR {cluster_info.name} BATCH {batch_num} SKIPPED.")
+                if verbosity != "none":
+                    print(f"  SELLER STOCK LOW: Not enough auction stock for this batch (Needs: {quantity:.2f}, Has: {live_auction_stock:.2f}).")
+                    print(f"  AUCTION FOR {cluster_info.name} BATCH {batch_num} SKIPPED.")
                 continue # Skip this cluster's batch and move to next cluster
             
             bids = [] # List to store (v_value, country)
@@ -167,13 +194,16 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
                 )
                 
                 if accepted:
-                    print(f"  {country.name:<13}: Bid ACCEPTED (v_value: ${v_value:.4f}B)")
+                    if verbosity == "verbose":
+                        print(f"  {country.name:<13}: Bid ACCEPTED (v_value: ${v_value:.4f}B)")
                     bids.append((v_value, country))
                 else:
-                    print(f"  {country.name:<13}: Bid REJECTED (v_value: ${v_value:.4f}B)")
+                    if verbosity == "verbose":
+                        print(f"  {country.name:<13}: Bid REJECTED (v_value: ${v_value:.4f}B)")
             
             if not bids:
-                print("  RESULT: No bids for this batch.")
+                if verbosity != "none":
+                    print("  No bids for this batch.")
                 continue # Move to next cluster
                 
             bids.sort(key=lambda x: x[0], reverse=True)
@@ -183,28 +213,38 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
             price_per_unit = 0.0
             
             if len(bids) == 1:
-                print(f"  RESULT: Only one bidder ({winner.name}).")
+                if verbosity == "verbose":
+                    print(f"  RESULT: Only one bidder ({winner.name}).")
+                    print(f"  Winner pays reserve (base) price.")
                 price_per_unit = base_price
-                print(f"  Winner pays reserve (base) price.")
             else:
                 # Vickrey: Winner pays second-highest bid
                 second_highest_v_value = bids[1][0]
                 price_per_unit = second_highest_v_value
-                print(f"  RESULT: {len(bids)} bidders.")
-                print(f"  Winner: {winner.name:<13} (Bid Value: ${winner_bid_v_value:.4f}B)")
-                print(f"  Winner Pays (2nd Price): ${price_per_unit:.4f}B per unit")
+                if verbosity == "verbose":
+                    print(f"  RESULT: {len(bids)} bidders.")
+                    print(f"  Winner: {winner.name:<13} (Bid Value: ${winner_bid_v_value:.4f}B)")
+                    print(f"  Winner Pays (2nd Price): ${price_per_unit:.4f}B per unit")
             
             total_cost = price_per_unit * quantity
             
             # Updates directly reflect in the Country object
             if winner.budget < total_cost:
-                print(f"  WINNER {winner.name} FAILED: Insufficient budget.")
-                print(f"    Budget: ${winner.budget:.2f}B, Cost: ${total_cost:.2f}B")
+                if verbosity != "none":
+                    print(f"  WINNER {winner.name} FAILED: Insufficient budget.")
+                    print(f"    Budget: ${winner.budget:.2f}B, Cost: ${total_cost:.2f}B")
                 continue # Skip to next cluster
-                
-            print(f"  TRANSACTION:")
-            print(f"    {winner.name:<13} pays ${total_cost:.2f}B")
-            print(f"    {seller.name:<13} receives ${total_cost:.2f}B")
+            
+            # CONCISE: Single-line format
+            if verbosity == "concise":
+                bidder_names = ", ".join([country.name for _, country in bids])
+                print(f"  Bidders: {bidder_names}")
+                print(f"  Money: {winner.name} pays ${total_cost:.2f}B → {seller.name} receives ${total_cost:.2f}B")
+                print(f"  Resource: {seller.name} transfers {quantity:.2f} {resource_unit} → {winner.name}")
+            elif verbosity == "verbose":
+                print(f"  TRANSACTION:")
+                print(f"    {winner.name:<13} pays ${total_cost:.2f}B")
+                print(f"    {seller.name:<13} receives ${total_cost:.2f}B")
 
             winner.budget -= total_cost
             seller.budget += total_cost
@@ -218,14 +258,16 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
             else:
                 winner.resources[resource_name] = Resource(amount=quantity, unit=resource_unit)
             
-            print(f"  New Balances:")
-            print(f"    {winner.name:<13}: Budget ${winner.budget:6.2f}B, {resource_name}: {winner.get_resource(resource_name).amount:.2f}")
-            print(f"    {seller.name:<13}: Budget ${seller.budget:6.2f}B, {resource_name}: {seller_resource.amount:.2f}")
-            print(f"    (Auction Stock Remaining: {live_auction_stock:.2f})")
+            if verbosity == "verbose":
+                print(f"  New Balances:")
+                print(f"    {winner.name:<13}: Budget ${winner.budget:6.2f}B, {resource_name}: {winner.get_resource(resource_name).amount:.2f}")
+                print(f"    {seller.name:<13}: Budget ${seller.budget:6.2f}B, {resource_name}: {seller_resource.amount:.2f}")
+                print(f"    (Auction Stock Remaining: {live_auction_stock:.2f})")
 
-    print("\n" + "="*70)
-    print("SIMULATION COMPLETE")
-    print("="*70)
+    if verbosity != "none":
+        print("\n" + "="*70)
+        print("SIMULATION COMPLETE")
+        print("="*70)
 
 
 # -----------------------------------------------------------------
@@ -277,7 +319,8 @@ if __name__ == "__main__":
         seller=seller_country,
         resource_name="COAL",
         total_quantity=TOTAL_AUCTION_QUANTITY,  # Selling 50 billion barrels
-        base_price=0.05        # Base price is $0.5B per unit
+        base_price=0.05,       # Base price is $0.5B per unit
+        verbosity="concise"    # Options: "none", "concise", "verbose"
     )
 
     # --- Print Final State ---
