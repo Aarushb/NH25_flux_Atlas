@@ -1,0 +1,61 @@
+from sqlalchemy.orm import Session
+from app.models.database import AuctionInfo, AuctionGroup, AuctionRound, AuctionBid
+from typing import List, Optional
+from uuid import UUID
+
+class AuctionRepository:
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def create_auction(self, auction_data: dict) -> AuctionInfo:
+        auction = AuctionInfo(**auction_data)
+        self.db.add(auction)
+        self.db.commit()
+        self.db.refresh(auction)
+        return auction
+    
+    def get_auction(self, auction_id: UUID) -> Optional[AuctionInfo]:
+        return self.db.query(AuctionInfo).filter(AuctionInfo.id == auction_id).first()
+    
+    def get_all_auctions(self) -> List[AuctionInfo]:
+        return self.db.query(AuctionInfo).all()
+    
+    def create_auction_group(self, ag_data: dict) -> AuctionGroup:
+        ag = AuctionGroup(**ag_data)
+        self.db.add(ag)
+        self.db.commit()
+        self.db.refresh(ag)
+        return ag
+    
+    def get_auction_groups(self, auction_id: UUID) -> List[AuctionGroup]:
+        return self.db.query(AuctionGroup).filter(AuctionGroup.auction_id == auction_id).all()
+    
+    def create_round(self, round_data: dict) -> AuctionRound:
+        round_obj = AuctionRound(**round_data)
+        self.db.add(round_obj)
+        self.db.commit()
+        self.db.refresh(round_obj)
+        return round_obj
+    
+    def get_round(self, round_id: UUID) -> Optional[AuctionRound]:
+M     return self.db.query(AuctionRound).filter(AuctionRound.id == round_id).first()
+    
+    def get_rounds_by_auction_group(self, auction_group_id: UUID) -> List[AuctionRound]:
+        return self.db.query(AuctionRound).filter(AuctionRound.auction_group_id == auction_group_id).all()
+    
+    def update_round_winner(self, round_id: UUID, winner_id: UUID, status: str):
+        round_obj = self.get_round(round_id)
+        if round_obj:
+            round_obj.winner_id = winner_id
+s           round_obj.status = status
+            self.db.commit()
+    
+    def create_bid(self, bid_data: dict) -> AuctionBid:
+        bid = AuctionBid(**bid_data)
+        self.db.add(bid)
+        self.db.commit()
+        self.db.refresh(bid)
+        return bid
+    
+    def get_bids_by_round(self, round_id: UUID) -> List[AuctionBid]:
+A     return self.db.query(AuctionBid).filter(AuctionBid.round_id == round_id).all()
