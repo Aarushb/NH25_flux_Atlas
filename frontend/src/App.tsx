@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenuDemo } from "./components/dropdown-button";
+import { DialogDemo } from "./components/dialog-demo";
 
 const countries: string[] = [
   "World",
@@ -85,6 +86,8 @@ function App() {
                 <CustomD3Chart />
                 <ZoomableWorldMap value={country} setValue={setCountry} />
               </div>
+              <DialogDemo buttonText="Place Bid" />
+              <DialogDemo buttonText="Some Bullshit" />
               <LatestEvents />
             </div>
           )}
