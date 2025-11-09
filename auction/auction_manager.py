@@ -116,28 +116,34 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
     print("="*70)
 
     live_auction_stock = total_quantity
+    
+    # Determine maximum number of batches across all clusters
+    max_batches = max(len(cluster_enum.value.auction_batches) for cluster_enum in CountryClusters)
+    
+    print(f"\nTotal batches to process: {max_batches}")
+    print("Processing all clusters batch-by-batch...\n")
 
-    for cluster_enum in CountryClusters:
-        cluster_info = cluster_enum.value
-        print(f"\n--- Processing Cluster: {cluster_info.name} ---")
+    # NEW: Iterate batch-by-batch, then cluster-by-cluster within each batch
+    for batch_num in range(1, max_batches + 1):
+        print("\n" + "="*70)
+        print(f"BATCH {batch_num} - PROCESSING ALL CLUSTERS")
+        print("="*70)
         
-        sorted_batch_nums = sorted(cluster_info.auction_batches.keys())
-        if not sorted_batch_nums:
-            print("  No batches to process for this cluster.")
-            continue
-
-        for batch_num in sorted_batch_nums:
+        for cluster_enum in CountryClusters:
+            cluster_info = cluster_enum.value
+            
+            # Check if this cluster has this batch number
             quantity = cluster_info.get_batch_quantity(batch_num)
+            if quantity is None or quantity == 0:
+                print(f"\n[{cluster_info.name}] - No Batch {batch_num}")
+                continue
             
-            if quantity == 0:
-                continue # Skip empty batches
-            
-            print(f"\n  --- Batch {batch_num} | Quantity: {quantity:.2f} {resource_unit} ---")
+            print(f"\n--- {cluster_info.name} - Batch {batch_num} | Quantity: {quantity:.2f} {resource_unit} ---")
 
             if live_auction_stock < quantity:
                 print(f"  SELLER STOCK LOW: Not enough auction stock for this batch (Needs: {quantity:.2f}, Has: {live_auction_stock:.2f}).")
-                print(f"  AUCTION FOR {cluster_info.name} ENDED.")
-                break # Stop processing batches for this cluster
+                print(f"  AUCTION FOR {cluster_info.name} BATCH {batch_num} SKIPPED.")
+                continue # Skip this cluster's batch and move to next cluster
             
             bids = [] # List to store (v_value, country)
             for country in cluster_info.countries:
@@ -161,14 +167,14 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
                 )
                 
                 if accepted:
-                    print(f"    {country.name:<13}: Bid ACCEPTED (v_value: ${v_value:.4f}B)")
+                    print(f"  {country.name:<13}: Bid ACCEPTED (v_value: ${v_value:.4f}B)")
                     bids.append((v_value, country))
                 else:
-                    print(f"    {country.name:<13}: Bid REJECTED (v_value: ${v_value:.4f}B)")
+                    print(f"  {country.name:<13}: Bid REJECTED (v_value: ${v_value:.4f}B)")
             
             if not bids:
-                print("    RESULT: No bids for this batch.")
-                continue # Move to next batch
+                print("  RESULT: No bids for this batch.")
+                continue # Move to next cluster
                 
             bids.sort(key=lambda x: x[0], reverse=True)
             
@@ -177,28 +183,28 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
             price_per_unit = 0.0
             
             if len(bids) == 1:
-                print(f"    RESULT: Only one bidder ({winner.name}).")
+                print(f"  RESULT: Only one bidder ({winner.name}).")
                 price_per_unit = base_price
-                print(f"    Winner pays reserve (base) price.")
+                print(f"  Winner pays reserve (base) price.")
             else:
                 # Vickrey: Winner pays second-highest bid
                 second_highest_v_value = bids[1][0]
                 price_per_unit = second_highest_v_value
-                print(f"    RESULT: {len(bids)} bidders.")
-                print(f"    Winner: {winner.name:<13} (Bid Value: ${winner_bid_v_value:.4f}B)")
-                print(f"    Winner Pays (2nd Price): ${price_per_unit:.4f}B per unit")
+                print(f"  RESULT: {len(bids)} bidders.")
+                print(f"  Winner: {winner.name:<13} (Bid Value: ${winner_bid_v_value:.4f}B)")
+                print(f"  Winner Pays (2nd Price): ${price_per_unit:.4f}B per unit")
             
             total_cost = price_per_unit * quantity
             
             # Updates directly reflect in the Country object
             if winner.budget < total_cost:
-                print(f"    WINNER {winner.name} FAILED: Insufficient budget.")
-                print(f"      Budget: ${winner.budget:.2f}B, Cost: ${total_cost:.2f}B")
-                continue # Skip to next batch
+                print(f"  WINNER {winner.name} FAILED: Insufficient budget.")
+                print(f"    Budget: ${winner.budget:.2f}B, Cost: ${total_cost:.2f}B")
+                continue # Skip to next cluster
                 
-            print(f"    TRANSACTION:")
-            print(f"      {winner.name:<13} pays ${total_cost:.2f}B")
-            print(f"      {seller.name:<13} receives ${total_cost:.2f}B")
+            print(f"  TRANSACTION:")
+            print(f"    {winner.name:<13} pays ${total_cost:.2f}B")
+            print(f"    {seller.name:<13} receives ${total_cost:.2f}B")
 
             winner.budget -= total_cost
             seller.budget += total_cost
@@ -212,10 +218,10 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
             else:
                 winner.resources[resource_name] = Resource(amount=quantity, unit=resource_unit)
             
-            print(f"    New Balances:")
-            print(f"      {winner.name:<13}: Budget ${winner.budget:6.2f}B, {resource_name}: {winner.get_resource(resource_name).amount:.2f}")
-            print(f"      {seller.name:<13}: Budget ${seller.budget:6.2f}B, {resource_name}: {seller_resource.amount:.2f}")
-            print(f"      (Auction Stock Remaining: {live_auction_stock:.2f})")
+            print(f"  New Balances:")
+            print(f"    {winner.name:<13}: Budget ${winner.budget:6.2f}B, {resource_name}: {winner.get_resource(resource_name).amount:.2f}")
+            print(f"    {seller.name:<13}: Budget ${seller.budget:6.2f}B, {resource_name}: {seller_resource.amount:.2f}")
+            print(f"    (Auction Stock Remaining: {live_auction_stock:.2f})")
 
     print("\n" + "="*70)
     print("SIMULATION COMPLETE")
