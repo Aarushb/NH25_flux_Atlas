@@ -1,4 +1,4 @@
-from resource import Resource
+from .resourcess import Resource
 
 country_resources: dict[str, dict[str, Resource]] = {
     "Russia": {

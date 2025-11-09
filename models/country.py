@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional
-from resource import Resource
-from country_data import country_resources, country_demands
+from .resourcess import Resource
+
+from .country_data import country_resources, country_demands
+
 
 
 

@@ -1,10 +1,6 @@
-
-from dataclasses import dataclass
-from typing import List, Dict
-from enum import Enum
-
-from country import Country
-
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
+from .country import Country
 
 
 @dataclass
@@ -16,6 +12,7 @@ class ClusterInfo:
     max_ppp: int
     budget: float = 0.0
     auction_quantity: Optional[float] = None
+    auction_batches: Dict[int, float] = field(default_factory=dict)  # Store batches here
     
     def __post_init__(self):
         """After initialization, calculate and assign budgets to all countries."""
@@ -66,8 +63,8 @@ class ClusterInfo:
     def assign_auction_quantity(self, total_quantity: float, total_clusters: int = 6) -> None:
         """
         Calculate and assign the auction quantity for this cluster.
+        Also automatically calculates and stores batch quantities.
         Called when an auction starts.
-        
         
         Args:
             total_quantity: Total resource quantity to distribute
@@ -75,6 +72,81 @@ class ClusterInfo:
         """
         self.auction_quantity = (total_quantity / total_clusters) * self.country_count
         
-
+        # Automatically calculate and store batches
+        self._calculate_and_store_batches()
     
-
+    def _calculate_and_store_batches(self) -> None:
+        """
+        Internal method to calculate and store batch quantities.
+        Divides auction_quantity into n-1 batches where n = number of countries.
+        
+        Formula:
+        - Batch 1: quantity / 2
+        - Batch 2: remaining / 2
+        - Batch 3: remaining / 2
+        - ...
+        - Batch n-1: all remaining
+        """
+        if self.auction_quantity is None:
+            return
+        
+        num_batches = self.country_count - 1
+        
+        if num_batches <= 0:
+            # Edge case: only 1 country, all quantity in batch 1
+            self.auction_batches = {1: self.auction_quantity}
+            return
+        
+        self.auction_batches = {}
+        remaining_quantity = self.auction_quantity
+        
+        for batch_num in range(1, num_batches + 1):
+            if batch_num == num_batches:
+                # Last batch gets all remaining quantity
+                self.auction_batches[batch_num] = remaining_quantity
+            else:
+                # Current batch gets half of remaining
+                batch_quantity = remaining_quantity / 2
+                self.auction_batches[batch_num] = batch_quantity
+                remaining_quantity -= batch_quantity
+    
+    def get_batch_quantity(self, batch_num: int) -> Optional[float]:
+        """
+        Get the quantity for a specific batch number.
+        
+        Args:
+            batch_num: Batch number (1-indexed)
+            
+        Returns:
+            Batch quantity or None if batch doesn't exist
+        """
+        return self.auction_batches.get(batch_num)
+    
+    def get_num_batches(self) -> int:
+        """Get the total number of batches."""
+        return len(self.auction_batches)
+    
+    def get_batch_summary(self) -> Dict:
+        """
+        Get a summary of all batch allocations.
+        
+        Returns:
+            Dictionary with batch allocation details
+        """
+        if not self.auction_batches:
+            return {
+                "cluster_name": self.name,
+                "error": "No batches calculated. Call assign_auction_quantity() first."
+            }
+        
+        return {
+            "cluster_name": self.name,
+            "total_quantity": self.auction_quantity,
+            "num_countries": self.country_count,
+            "num_batches": len(self.auction_batches),
+            "batches": self.auction_batches.copy(),
+            "batch_percentages": {
+                batch_num: (qty / self.auction_quantity) * 100
+                for batch_num, qty in self.auction_batches.items()
+            }
+        }

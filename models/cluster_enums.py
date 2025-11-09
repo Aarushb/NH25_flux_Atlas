@@ -2,14 +2,14 @@ from dataclasses import dataclass
 from typing import List, Dict
 from enum import Enum
 
-from country import Country
+from .country import Country
+from .cluster import ClusterInfo
 
 
 
-
-class CountryClusters(Enum):
+class CountryClusters(Enum):    
     """K-means clustering results based on PPP values."""
-    
+
     GROUP1 = ClusterInfo(
         name="Emerging Markets - Low PPP",
         countries=[

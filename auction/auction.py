@@ -1,10 +1,13 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from datetime import datetime
 from enum import Enum
-from resources import Resource
-from country import Country
-
+from models.resourcess import Resource
+from models.country import Country
 
 class AuctionStatus(Enum):
     """Status of an auction."""
