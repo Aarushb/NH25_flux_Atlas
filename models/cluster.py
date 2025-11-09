@@ -15,6 +15,7 @@ class ClusterInfo:
     min_ppp: int
     max_ppp: int
     budget: float = 0.0
+    auction_quantity: Optional[float] = None
     
     def __post_init__(self):
         """After initialization, calculate and assign budgets to all countries."""
@@ -31,7 +32,12 @@ class ClusterInfo:
     def total_ppp(self) -> float:
         """Calculate total PPP for all countries in cluster."""
         return sum(c.ppp for c in self.countries)
-    
+
+    @property
+    def country_count(self) -> int:
+        """Get number of countries in this cluster."""
+        return len(self.countries)
+
     def assign_country_budgets(self) -> None:
         """Calculate and assign budget to each country in this cluster."""
         cluster_total_ppp = self.total_ppp
@@ -56,4 +62,19 @@ class ClusterInfo:
             country_budgets[country.name] = country_budget
         
         return country_budgets
+    
+    def assign_auction_quantity(self, total_quantity: float, total_clusters: int = 6) -> None:
+        """
+        Calculate and assign the auction quantity for this cluster.
+        Called when an auction starts.
+        
+        
+        Args:
+            total_quantity: Total resource quantity to distribute
+            total_clusters: Total number of clusters (default: 6)
+        """
+        self.auction_quantity = (total_quantity / total_clusters) * self.country_count
+        
+
+    
 
