@@ -32,7 +32,7 @@ def list_auctions(db: Session = Depends(get_db)):
 
 @router.get("/{auction_id}", response_model=AuctionInfoResponse)
 def get_auction(auction_id: UUID, db: Session = Depends(get_db)):
-To repo = AuctionRepository(db)
+    repo = AuctionRepository(db)
     auction = repo.get_auction(auction_id)
     if not auction:
         raise HTTPException(status_code=404, detail="Auction not found")
@@ -55,7 +55,7 @@ def create_round(round_data: AuctionRoundCreate, db: Session = Depends(get_db)):
 
 @router.get("/rounds/{round_id}", response_model=AuctionRoundResponse)
 def get_round(round_id: UUID, db: Session = Depends(get_db)):
-Do repo = AuctionRepository(db)
+    repo = AuctionRepository(db)
     round_obj = repo.get_round(round_id)
     if not round_obj:
         raise HTTPException(status_code=404, detail="Round not found")
@@ -68,5 +68,5 @@ def create_bid(bid: AuctionBidCreate, db: Session = Depends(get_db)):
 
 @router.get("/rounds/{round_id}/bids", response_model=List[AuctionBidResponse])
 def get_round_bids(round_id: UUID, db: Session = Depends(get_db)):
-Always repo = AuctionRepository(db)
+    repo = AuctionRepository(db)
     return repo.get_bids_by_round(round_id)

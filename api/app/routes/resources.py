@@ -9,7 +9,7 @@ from uuid import UUID
 router = APIRouter(prefix="/resources", tags=["resources"])
 
 def get_db():
-A   from app.main import SessionLocal
+    from app.main import SessionLocal
     db = SessionLocal()
     try:
         yield db
@@ -22,7 +22,7 @@ def create_resource(resource: ResourceCreate, db: Session = Depends(get_db)):
     existing = repo.get_by_name(resource.rname)
     if existing:
         raise HTTPException(status_code=400, detail="Resource already exists")
-d   return repo.create(resource.dict())
+    return repo.create(resource.dict())
 
 @router.get("/", response_model=List[ResourceResponse])
 def list_resources(db: Session = Depends(get_db)):
@@ -31,7 +31,7 @@ def list_resources(db: Session = Depends(get_db)):
 
 @router.get("/{resource_id}", response_model=ResourceResponse)
 def get_resource(resource_id: UUID, db: Session = Depends(get_db)):
-Route repo = ResourceRepository(db)
+    Route repo = ResourceRepository(db)
     resource = repo.get(resource_id)
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
@@ -42,5 +42,5 @@ def create_country_resource(cr: CountryResourceCreate, db: Session = Depends(get
     repo = CountryResourceRepository(db)
     existing = repo.get(cr.country_id, cr.resource_id)
     if existing:
-A     raise HTTPException(status_code=400, detail="Country-Resource mapping already exists")
+        raise HTTPException(status_code=400, detail="Country-Resource mapping already exists")
     return repo.create(cr.dict())

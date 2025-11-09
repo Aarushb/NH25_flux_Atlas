@@ -48,7 +48,6 @@ class ResourceResponse(BaseModel):
     rname: str
     price: Optional[float]
     description: Optional[str]
-  _ 
     class Config:
         from_attributes = True
 

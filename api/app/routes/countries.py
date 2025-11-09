@@ -26,7 +26,7 @@ def create_country(country: CountryCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[CountryResponse])
 def list_countries(db: Session = Depends(get_db)):
-s   repo = CountryRepository(db)
+    repo = CountryRepository(db)
     return repo.get_all()
 
 @router.get("/{country_id}", response_model=CountryResponse)

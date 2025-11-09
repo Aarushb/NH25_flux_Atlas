@@ -30,7 +30,7 @@ def list_groups(db: Session = Depends(get_db)):
 
 @router.get("/{group_id}", response_model=GroupResponse)
 def get_group(group_id: UUID, db: Session = Depends(get_db)):
-s   repo = GroupRepository(db)
+    repo = GroupRepository(db)
     group = repo.get(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")

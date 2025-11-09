@@ -38,7 +38,7 @@ class AuctionRepository:
         return round_obj
     
     def get_round(self, round_id: UUID) -> Optional[AuctionRound]:
-M     return self.db.query(AuctionRound).filter(AuctionRound.id == round_id).first()
+        return self.db.query(AuctionRound).filter(AuctionRound.id == round_id).first()
     
     def get_rounds_by_auction_group(self, auction_group_id: UUID) -> List[AuctionRound]:
         return self.db.query(AuctionRound).filter(AuctionRound.auction_group_id == auction_group_id).all()
@@ -47,7 +47,7 @@ M     return self.db.query(AuctionRound).filter(AuctionRound.id == round_id).fir
         round_obj = self.get_round(round_id)
         if round_obj:
             round_obj.winner_id = winner_id
-s           round_obj.status = status
+            round_obj.status = status
             self.db.commit()
     
     def create_bid(self, bid_data: dict) -> AuctionBid:
@@ -58,4 +58,4 @@ s           round_obj.status = status
         return bid
     
     def get_bids_by_round(self, round_id: UUID) -> List[AuctionBid]:
-A     return self.db.query(AuctionBid).filter(AuctionBid.round_id == round_id).all()
+        return self.db.query(AuctionBid).filter(AuctionBid.round_id == round_id).all()
