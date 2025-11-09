@@ -1,0 +1,262 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+.landing-hero{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(10,20,18,0.9),rgba(10,20,18,0.95));z-index:60}
+.landing-inner{width:100%;max-width:1400px;padding:6rem;text-align:center;display:flex;flex-direction:column;gap:2.5rem;align-items:center}
+.landing-title{color:var(--foreground);font-size:2rem;font-weight:700;letter-spacing:0.02em}
+.landing-stats{display:flex;gap:3rem;align-items:center;justify-content:center;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;align-items:center;gap:0.5rem}
+.stat-label{color:rgba(245,243,240,0.75);font-size:1rem}
+.stat-value{color:var(--foreground);font-size:3.6rem;font-weight:800}
+.stat-suffix{font-size:1.1rem;font-weight:600;color:rgba(245,243,240,0.85)}
+.landing-arrow{margin-top:1rem;background:transparent;border:1px solid rgba(0,255,127,0.18);color:var(--foreground);padding:0.8rem 1.25rem;border-radius:999px;font-size:1.45rem;animation:arrow-bounce 1.6s infinite}
+.landing-start-btn{margin-top:1rem;background:transparent;border:none;color:var(--foreground);padding:0.4rem 0.6rem;border-radius:6px;font-size:1rem;cursor:pointer;text-decoration:underline;opacity:0.95}
+.landing-start-btn:hover{color:#00ff7f;text-decoration:none}
+.landing-hero{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(180deg,rgba(10,20,18,0.9),rgba(10,20,18,0.95));z-index:60}
+@keyframes arrow-bounce{0%{transform:translateY(0)}50%{transform:translateY(10px)}100%{transform:translateY(0)}}
+
+
+:root {
+  --radius: 0.625rem;
+  --background: #1a2421; 
+  --foreground: #F5F3F0;
+  --card: rgba(255,255,255,0.03);
+  --card-foreground: var(--foreground);
+  --popover: rgba(255,255,255,0.02);
+  --popover-foreground: var(--foreground);
+  --primary: #008080;
+  --primary-foreground: #F5F3F0;
+  --secondary: rgba(0,128,128,0.12);
+  --secondary-foreground: var(--foreground);
+  --muted: rgba(245,243,240,0.06);
+  --muted-foreground: rgba(245,243,240,0.6);
+  --accent: #008080;
+  --accent-foreground: var(--foreground);
+  --destructive: rgba(255,85,85,0.12);
+  --border: rgba(245,243,240,0.06);
+  --input: rgba(245,243,240,0.04);
+  --ring: rgba(0,128,128,0.18);
+  --chart-1: #00ff7f;
+  --chart-2: #008080;
+  --chart-3: #4ad9d9;
+  --chart-4: #66ffc2;
+  --chart-5: #2ee6e6;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html, body {
+    font-family: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system,
+      'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.04);
+    backdrop-filter: blur(8px) saturate(140%);
+    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    color: var(--foreground);
+  }
+
+  .card {
+    background: var(--card);
+    color: var(--card-foreground);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255,255,255,0.03);
+    padding: 1rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  }
+
+  button,
+  .btn,
+  .button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    background: transparent;
+    color: var(--foreground);
+    border: 1px solid rgba(0,255,127,0.18); 
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: box-shadow 150ms ease, transform 120ms ease, border-color 150ms ease;
+  }
+
+  button:hover,
+  .btn:hover,
+  .button:hover,
+  [role="button"]:hover,
+  input[type="button"]:hover,
+  input[type="submit"]:hover {
+    border-color: #00ff7f;
+    box-shadow: 0 0 18px #00ff7f33, 0 6px 24px rgba(0,0,0,0.5);
+    transform: translateY(-1px);
+  }
+
+  button:active,
+  .btn:active {
+    transform: translateY(0);
+    box-shadow: 0 0 12px #00ff7f22;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer base {
+  :root {
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+  }
+
+  .dark {
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes neon-pulse {
+  0% {
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 3px rgba(0,255,127,0.40));
+  }
+  50% {
+    stroke-opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(0,255,127,0.8));
+  }
+  100% {
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 3px rgba(0,255,127,0.40));
+  }
+}
+
+.geo {
+  fill: #0f2623;
+  stroke: rgba(255,255,255,0.03);
+  stroke-width: 0.5;
+  transition: fill 150ms ease, stroke 150ms ease, stroke-width 150ms ease, filter 200ms ease;
+}
+.geo:hover {
+  fill: #12322f;
+  stroke: rgba(255,255,255,0.06);
+  stroke-width: 0.8;
+}
+.selected-geo {
+  stroke: #00ff7f;
+  stroke-width: 0.4;
+  filter: drop-shadow(0 0 4px rgba(0,255,127,0.35));
+  animation: neon-pulse 2.8s ease-in-out infinite;
+}
+
+/* Market health card micro-interactions */
+.market-health .card {
+  transition: transform 420ms cubic-bezier(.16,.84,.44,1), box-shadow 420ms ease, border-color 280ms ease;
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+}
+.market-health .card:hover {
+  transform: translateY(-10px) scale(1.01);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 28px rgba(0,255,127,0.06);
+  border-color: rgba(0,255,127,0.06);
+}
+.market-health .card:active { transform: translateY(-6px) scale(1.005); }
+
+/* Neon inner glow for charts on hover */
+.market-health .card:hover svg path,
+.market-health .card:hover svg circle,
+.market-health .card:hover svg polygon {
+  filter: drop-shadow(0 0 6px rgba(0,255,127,0.14));
+}
+
+/* Subtle parallax using pointer movement (fallback to hover translate) */
+.market-health .card[data-parallax="true"] { perspective: 800px; }
+.market-health .card[data-parallax="true"]:hover { transform-style: preserve-3d; }
+
+/* Smooth transform on the inner parallax wrapper */
+.parallax-inner {
+  transition: transform 420ms cubic-bezier(.16,.84,.44,1);
+  will-change: transform;
+}
+
+
