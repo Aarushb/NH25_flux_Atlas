@@ -15,6 +15,23 @@ class AuctionStatus(Enum):
     CANCELLED = "cancelled"
 
 
+def calculate_cluster_auction_quantities(total_quantity: float, clusters: List, total_clusters: int = 6) -> None:
+    """
+    Calculate and assign auction quantities to all clusters.
+    This should be called when starting auctions across all clusters.
+    
+    Formula: (total_quantity / total_clusters) * country_count_in_cluster
+    
+    Args:
+        total_quantity: Total resource quantity to distribute
+        clusters: List of ClusterInfo objects
+        total_clusters: Total number of clusters (default: 6)
+    """
+    
+    for cluster in clusters:
+        cluster.assign_auction_quantity(total_quantity, total_clusters)
+
+
 @dataclass
 class Bid:
     """Represents a sealed bid in an auction."""
@@ -68,21 +85,33 @@ class Auction:
     def open_bidding(self) -> bool:
         """Open the auction for bidding."""
         if not self.seller.has_resource(self.resource_name):
+            print(f"{self.seller.name} doesn't have {self.resource_name}")
             return False
         
         seller_resource = self.seller.get_resource(self.resource_name)
         if seller_resource.amount < self.quantity:
+            print(f" {self.seller.name} doesn't have enough {self.resource_name}")
+            print(f"   Has: {seller_resource.amount} {self.resource_unit}, Needs: {self.quantity} {self.resource_unit}")
             return False
         
         self.status = AuctionStatus.BIDDING_OPEN
+        print(f"\n Auction is now OPEN")
+        print(f"   Seller: {self.seller.name}")
+        print(f"   Resource: {self.quantity} {self.resource_unit} of {self.resource_name}")
+        print(f"   Current Market Price: ${self.current_market_price:.2f} per {self.resource_unit}")
+        print(f"   Seller's Asking Price: ${self.asking_price_per_unit:.2f} per {self.resource_unit}")
+        print(f"   Total Market Value: ${self.total_market_value:.2f}B")
+        print(f"   Total Asking Price: ${self.total_asking_price:.2f}B")
         return True
     
     def submit_bid(self, country: Country, bid_price_per_unit: float) -> bool:
         """Submit a sealed bid."""
         if self.status != AuctionStatus.BIDDING_OPEN:
+            print(f" Bidding is not open")
             return False
         
         if country == self.seller:
+            print(f" {country.name} cannot bid on their own resource")
             return False
         
         # Calculate total bid amount
@@ -90,45 +119,57 @@ class Auction:
         
         # Check if country has enough budget
         if country.budget < total_bid:
+            print(f" {country.name} doesn't have enough budget")
+            print(f"   Has: ${country.budget:.2f}B, Needs: ${total_bid:.2f}B")
             return False
         
         # Check if bid meets asking price
         if bid_price_per_unit < self.asking_price_per_unit:
+            print(f" Bid too low. Minimum: ${self.asking_price_per_unit:.2f} per {self.resource_unit}")
             return False
         
         # Check if country already bid
         for bid in self.bids:
             if bid.country == country:
+                print(f" {country.name} has already placed a bid")
                 return False
         
         # Submit sealed bid
         bid = Bid(country=country, bid_price_per_unit=bid_price_per_unit, is_revealed=False)
         self.bids.append(bid)
+        print(f" {country.name} submitted a sealed bid")
         return True
     
     def close_bidding(self) -> bool:
         """Close bidding for this auction."""
         if self.status != AuctionStatus.BIDDING_OPEN:
+            print(f" Bidding is not open")
             return False
         
         self.status = AuctionStatus.BIDDING_CLOSED
+        print(f"\n Bidding is now CLOSED")
         return True
     
     def reveal_bids(self) -> None:
         """Reveal all sealed bids."""
         if self.status != AuctionStatus.BIDDING_CLOSED:
+            print(f" Cannot reveal bids - bidding not closed")
             return
         
+        print(f"\n Revealing bids:")
         for bid in sorted(self.bids, key=lambda b: b.bid_price_per_unit, reverse=True):
             bid.is_revealed = True
             total = bid.get_total_bid(self.quantity)
+            print(f"{bid.country.name}: ${bid.bid_price_per_unit:.2f} per {self.resource_unit} (Total: ${total:.2f}B)")
     
     def determine_winner(self) -> bool:
         """Determine the winner and complete the transaction."""
         if self.status != AuctionStatus.BIDDING_CLOSED:
+            print(f" Bidding must be closed first")
             return False
         
         if not self.bids:
+            print(f" No bids placed")
             self.status = AuctionStatus.CANCELLED
             return False
         
@@ -160,9 +201,14 @@ class Auction:
         self.final_price_per_unit = final_price_per_unit
         self.status = AuctionStatus.COMPLETED
         
+        print(f"\n Winner: {winner.name}")
+        print(f"   Final Price: ${final_price_per_unit:.2f} per {self.resource_unit}")
+        print(f"   Total Payment: ${total_price:.2f}B")
+        print(f"   Resource Transferred: {self.quantity} {self.resource_unit} of {self.resource_name}")
+        print(f"   {winner.name} budget: ${winner.budget:.2f}B")
+        print(f"   {self.seller.name} budget: ${self.seller.budget:.2f}B")
         
         return True
     
     def __repr__(self) -> str:
-        return f"Auction({self.resource_name}, seller={self.seller.name}, quantity={self.quantity}, status={self.status.value})"
-    
+        return f"Auction({self.resource_name}, seller={self.seller.name}, quantity={self.quantity}, status={self.status.value})"   

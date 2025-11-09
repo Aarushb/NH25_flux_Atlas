@@ -1,4 +1,4 @@
-from models.resource import Resource
+from resource import Resource
 
 country_resources: dict[str, dict[str, Resource]] = {
     "Russia": {
@@ -153,12 +153,6 @@ country_resources: dict[str, dict[str, Resource]] = {
         "BAUXITE": Resource(0.8, "million tonnes"),
         "NIOBIUM": Resource(0.08, "million tonnes"),
     },
-    "Luxembourg": {
-        "IRON_ORE": Resource(0.02, "billion tonnes"),
-    },
-    "French Guiana": {
-        "GOLD": Resource(0.02, "thousand tonnes"),
-    },
     "Switzerland": {
         "HYDROPOWER": Resource(18.0, "GW capacity"),
     },
@@ -168,7 +162,210 @@ country_resources: dict[str, dict[str, Resource]] = {
     "Kenya": {
         "HYDROPOWER": Resource(2.0, "GW capacity"),
     },
-    "Slovenia": {
-        "COAL": Resource(0.1, "billion tonnes"),
+    "Haiti": {},  # No resources listed
+    "Azerbaijan": {},  # No resources listed
+    "Latvia": {},  # No resources listed
+    "Australia": {},  # Will add demands
+    "Japan": {},  # Will add demands
+}
+
+
+# Country demands (hardcoded)
+country_demands: dict[str, dict[str, Resource]] = {
+    "Russia": {
+        "LITHIUM": Resource(0.5, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.02, "million tonnes"),
+        "COPPER": Resource(2.0, "million tonnes"),
+    },
+    "Kuwait": {
+        "COAL": Resource(5.0, "billion tonnes"),
+        "IRON_ORE": Resource(10.0, "billion tonnes"),
+        "COPPER": Resource(1.0, "million tonnes"),
+        "NICKEL": Resource(0.5, "million tonnes"),
+        "LITHIUM": Resource(0.3, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.01, "million tonnes"),
+    },
+    "Nigeria": {
+        "IRON_ORE": Resource(8.0, "billion tonnes"),
+        "COPPER": Resource(1.5, "million tonnes"),
+        "NICKEL": Resource(0.8, "million tonnes"),
+        "LITHIUM": Resource(0.2, "million tonnes"),
+        "COAL": Resource(10.0, "billion tonnes"),
+    },
+    "Chad": {
+        "IRON_ORE": Resource(2.0, "billion tonnes"),
+        "COPPER": Resource(0.3, "million tonnes"),
+        "COAL": Resource(3.0, "billion tonnes"),
+        "NICKEL": Resource(0.1, "million tonnes"),
+    },
+    "Iran": {
+        "NICKEL": Resource(1.0, "million tonnes"),
+        "LITHIUM": Resource(0.4, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.015, "million tonnes"),
+        "COAL": Resource(20.0, "billion tonnes"),
+    },
+    "Brazil": {
+        "PETROLEUM": Resource(50.0, "billion barrels"),
+        "NATURAL_GAS": Resource(15.0, "trillion cubic meters"),
+        "COPPER": Resource(2.0, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.05, "million tonnes"),
+    },
+    "Oman": {
+        "IRON_ORE": Resource(5.0, "billion tonnes"),
+        "COPPER": Resource(0.8, "million tonnes"),
+        "COAL": Resource(8.0, "billion tonnes"),
+        "NICKEL": Resource(0.4, "million tonnes"),
+        "LITHIUM": Resource(0.2, "million tonnes"),
+    },
+    "United States": {
+        "PETROLEUM": Resource(100.0, "billion barrels"),
+        "NATURAL_GAS": Resource(20.0, "trillion cubic meters"),
+        "IRON_ORE": Resource(50.0, "billion tonnes"),
+        "COPPER": Resource(5.0, "million tonnes"),
+        "NICKEL": Resource(2.0, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.1, "million tonnes"),
+        "LITHIUM": Resource(3.0, "million tonnes"),
+        "COAL": Resource(100.0, "billion tonnes"),
+    },
+    "Saudi Arabia": {
+        "IRON_ORE": Resource(15.0, "billion tonnes"),
+        "COPPER": Resource(2.0, "million tonnes"),
+        "NICKEL": Resource(1.0, "million tonnes"),
+        "COAL": Resource(20.0, "billion tonnes"),
+        "LITHIUM": Resource(0.5, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.02, "million tonnes"),
+    },
+    "Somalia": {
+        "PETROLEUM": Resource(5.0, "billion barrels"),
+        "COAL": Resource(2.0, "billion tonnes"),
+        "IRON_ORE": Resource(1.0, "billion tonnes"),
+    },
+    "Bangladesh": {
+        "PETROLEUM": Resource(10.0, "billion barrels"),
+        "IRON_ORE": Resource(5.0, "billion tonnes"),
+        "COPPER": Resource(0.5, "million tonnes"),
+        "NICKEL": Resource(0.3, "million tonnes"),
+    },
+    "Germany": {
+        "PETROLEUM": Resource(80.0, "billion barrels"),
+        "NATURAL_GAS": Resource(25.0, "trillion cubic meters"),
+        "IRON_ORE": Resource(40.0, "billion tonnes"),
+        "COPPER": Resource(3.0, "million tonnes"),
+        "LITHIUM": Resource(1.5, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.05, "million tonnes"),
+        "NICKEL": Resource(1.5, "million tonnes"),
+    },
+    "France": {
+        "PETROLEUM": Resource(60.0, "billion barrels"),
+        "NATURAL_GAS": Resource(20.0, "trillion cubic meters"),
+        "IRON_ORE": Resource(30.0, "billion tonnes"),
+        "COPPER": Resource(2.0, "million tonnes"),
+        "NICKEL": Resource(1.0, "million tonnes"),
+        "LITHIUM": Resource(1.0, "million tonnes"),
+    },
+    "Indonesia": {
+        "PETROLEUM": Resource(30.0, "billion barrels"),
+        "IRON_ORE": Resource(20.0, "billion tonnes"),
+        "COPPER": Resource(1.5, "million tonnes"),
+        "LITHIUM": Resource(0.4, "million tonnes"),
+    },
+    "South Africa": {
+        "PETROLEUM": Resource(40.0, "billion barrels"),
+        "NATURAL_GAS": Resource(10.0, "trillion cubic meters"),
+        "COPPER": Resource(2.0, "million tonnes"),
+        "LITHIUM": Resource(0.8, "million tonnes"),
+    },
+    "Pakistan": {
+        "PETROLEUM": Resource(25.0, "billion barrels"),
+        "NATURAL_GAS": Resource(8.0, "trillion cubic meters"),
+        "IRON_ORE": Resource(10.0, "billion tonnes"),
+        "NICKEL": Resource(0.5, "million tonnes"),
+    },
+    "Slovakia": {
+        "PETROLEUM": Resource(15.0, "billion barrels"),
+        "NATURAL_GAS": Resource(5.0, "trillion cubic meters"),
+        "COPPER": Resource(1.0, "million tonnes"),
+        "LITHIUM": Resource(0.3, "million tonnes"),
+    },
+    "Chile": {
+        "PETROLEUM": Resource(20.0, "billion barrels"),
+        "NATURAL_GAS": Resource(8.0, "trillion cubic meters"),
+        "COAL": Resource(15.0, "billion tonnes"),
+        "IRON_ORE": Resource(10.0, "billion tonnes"),
+    },
+    "Vietnam": {
+        "PETROLEUM": Resource(18.0, "billion barrels"),
+        "IRON_ORE": Resource(12.0, "billion tonnes"),
+        "COPPER": Resource(1.0, "million tonnes"),
+        "NICKEL": Resource(0.6, "million tonnes"),
+        "LITHIUM": Resource(0.3, "million tonnes"),
+    },
+    "India": {
+        "PETROLEUM": Resource(150.0, "billion barrels"),
+        "NATURAL_GAS": Resource(40.0, "trillion cubic meters"),
+        "COAL": Resource(200.0, "billion tonnes"),
+        "IRON_ORE": Resource(50.0, "billion tonnes"),
+        "COPPER": Resource(4.0, "million tonnes"),
+        "NICKEL": Resource(2.0, "million tonnes"),
+        "LITHIUM": Resource(2.0, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.05, "million tonnes"),
+    },
+    "Mozambique": {
+        "PETROLEUM": Resource(8.0, "billion barrels"),
+        "COAL": Resource(10.0, "billion tonnes"),
+        "IRON_ORE": Resource(5.0, "billion tonnes"),
+        "COPPER": Resource(0.4, "million tonnes"),
+    },
+    "Switzerland": {
+        "PETROLEUM": Resource(10.0, "billion barrels"),
+        "NATURAL_GAS": Resource(5.0, "trillion cubic meters"),
+        "IRON_ORE": Resource(8.0, "billion tonnes"),
+        "COPPER": Resource(0.5, "million tonnes"),
+        "LITHIUM": Resource(0.2, "million tonnes"),
+    },
+    "Sri Lanka": {
+        "PETROLEUM": Resource(12.0, "billion barrels"),
+        "COAL": Resource(8.0, "billion tonnes"),
+        "IRON_ORE": Resource(4.0, "billion tonnes"),
+        "COPPER": Resource(0.3, "million tonnes"),
+    },
+    "Kenya": {
+        "PETROLEUM": Resource(15.0, "billion barrels"),
+        "COAL": Resource(12.0, "billion tonnes"),
+        "IRON_ORE": Resource(6.0, "billion tonnes"),
+        "COPPER": Resource(0.5, "million tonnes"),
+    },
+    "Haiti": {
+        "PETROLEUM": Resource(5.0, "billion barrels"),
+        "COAL": Resource(3.0, "billion tonnes"),
+        "IRON_ORE": Resource(2.0, "billion tonnes"),
+    },
+    "Azerbaijan": {
+        "IRON_ORE": Resource(10.0, "billion tonnes"),
+        "COPPER": Resource(1.0, "million tonnes"),
+        "NICKEL": Resource(0.5, "million tonnes"),
+        "LITHIUM": Resource(0.2, "million tonnes"),
+    },
+    "Latvia": {
+        "PETROLEUM": Resource(8.0, "billion barrels"),
+        "NATURAL_GAS": Resource(3.0, "trillion cubic meters"),
+        "IRON_ORE": Resource(5.0, "billion tonnes"),
+        "COPPER": Resource(0.3, "million tonnes"),
+    },
+    "Australia": {
+        "PETROLEUM": Resource(30.0, "billion barrels"),
+        "LITHIUM": Resource(5.0, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.03, "million tonnes"),
+    },
+    "Japan": {
+        "PETROLEUM": Resource(100.0, "billion barrels"),
+        "NATURAL_GAS": Resource(30.0, "trillion cubic meters"),
+        "COAL": Resource(80.0, "billion tonnes"),
+        "IRON_ORE": Resource(60.0, "billion tonnes"),
+        "COPPER": Resource(3.0, "million tonnes"),
+        "NICKEL": Resource(2.0, "million tonnes"),
+        "LITHIUM": Resource(2.0, "million tonnes"),
+        "RARE_EARTH_ELEMENTS": Resource(0.08, "million tonnes"),
+        "URANIUM": Resource(0.3, "million tonnes"),
     },
 }

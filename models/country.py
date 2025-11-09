@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 from resource import Resource
+from country_data import country_resources, country_demands
+
 
 
 @dataclass
@@ -9,15 +11,18 @@ class Country:
     name: str
     ppp: int
     budget: float = 0.0
-    resources: Dict[str, Resource] = field(default_factory=dict)
+    resources: Dict[str, Resource] = field(default_factory=dict) #supply
+    demand: Dict[str,Resource] = field(default_factory=dict) #demand
     
     def __post_init__(self):
         """After initialization, load resources for this country from country_data."""
-        from country_data import country_resources
-        
+                
         # Get resources for this country and assign them
         if self.name in country_resources:
             self.resources = country_resources[self.name].copy()
+
+        if self.name in country_demands:
+            self.demand = country_demands[self.name].copy()
     
     def get_resource(self, resource_name: str) -> Optional[Resource]:
         """Get a specific resource by name."""
@@ -27,8 +32,71 @@ class Country:
         """Check if country has a specific resource."""
         return resource_name in self.resources
     
+    def get_demand(self, resource_name: str) -> Optional[Resource]:
+        """Get demand for a specific resource."""
+        return self.demand.get(resource_name)
+    
+    def has_demand(self, resource_name: str) -> bool:
+        """Check if country has demand for a specific resource."""
+        return resource_name in self.demand
+
+    def get_supply_demand_gap(self, resource_name: str) -> Dict:
+        """
+        Calculate supply vs demand gap for a specific resource.
+        
+        Returns:
+            Dictionary with supply, demand, gap, and status
+        """
+        supply = self.resources.get(resource_name)
+        demand = self.demand.get(resource_name)
+        
+        supply_amount = supply.amount if supply else 0.0
+        demand_amount = demand.amount if demand else 0.0
+        
+        gap = supply_amount - demand_amount
+        
+        if demand_amount == 0:
+            status = "NO_DEMAND"
+        elif supply_amount == 0:
+            status = "NO_SUPPLY"
+        elif gap > 0:
+            status = "SURPLUS"  # Can export
+        elif gap < 0:
+            status = "DEFICIT"  # Needs to import
+        else:
+            status = "BALANCED"
+        
+        return {
+            "resource": resource_name,
+            "supply": supply_amount,
+            "demand": demand_amount,
+            "gap": gap,
+            "status": status,
+            "unit": supply.unit if supply else (demand.unit if demand else "unknown")
+        }
+
+    def get_all_supply_demand_analysis(self) -> Dict[str, Dict]:
+        """Get supply/demand analysis for all resources this country has or needs."""
+        all_resources = set(self.resources.keys()) | set(self.demand.keys())
+        
+        analysis = {}
+        for resource_name in all_resources:
+            analysis[resource_name] = self.get_supply_demand_gap(resource_name)
+        
+        return analysis
+    
+    def get_export_resources(self) -> list[str]:
+        """Get list of resources this country can export (surplus)."""
+        return [res for res, data in self.get_all_supply_demand_analysis().items() 
+                if data["status"] == "SURPLUS"]
+    
+    def get_import_needs(self) -> list[str]:
+        """Get list of resources this country needs to import (deficit)."""
+        return [res for res, data in self.get_all_supply_demand_analysis().items() 
+                if data["status"] == "DEFICIT"]
+    
     def __repr__(self) -> str:
-        return f"Country(name='{self.name}', ppp={self.ppp}, budget=${self.budget:.2f}B, resources={len(self.resources)})"
+        return f"Country(name='{self.name}', ppp={self.ppp}, budget=${self.budget:.2f}B, resources={len(self.resources)}, demand={len(self.demand)})"
 
 
 
