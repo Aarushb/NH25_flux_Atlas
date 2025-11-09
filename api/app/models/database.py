@@ -1,100 +1,132 @@
-from sqlalchemy import create_engine, Column, String, Float, Integer, DateTime, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy import create_engine, Column, String, Float, Integer, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
-import enum
+import uuid
 
 Base = declarative_base()
 
-class OrderType(enum.Enum):
-    LIMIT = "LIMIT"
-    MARKET = "MARKET"
-
-class OrderSide(enum.Enum):
-    BUY = "BUY"
-    SELL = "SELL"
-
-class OrderStatus(enum.Enum):
-    PENDING = "PENDING"
-    PARTIAL = "PARTIAL"
-    FILLED = "FILLED"
-    CANCELLED = "CANCELLED"
+class Group(Base):
+    __tablename__ = "groups"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(20), unique=True, nullable=False)
+    low_ppp = Column(Integer)
+    high_ppp = Column(Integer)
+    description = Column(String(50))
+    
+    countries = relationship("Country", back_populates="group")
+    auction_groups = relationship("AuctionGroup", back_populates="group")
 
 class Country(Base):
-    __tablename__ = "countries"
-    
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    gdp_ppp = Column(Float, nullable=False)
-    carbon_budget = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    
-    orders = relationship("Order", back_populates="country")
-    trades_as_buyer = relationship("Trade", foreign_keys="Trade.buyer_id", back_populates="buyer")
-    trades_as_seller = relationship("Trade", foreign_keys="Trade.seller_id", back_populates="seller")
-    holdings = relationship("CountryHolding", back_populates="country")
+    __tablename__ = "countries"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cname = Column(String(50), unique=True, nullable=False)
+    group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id"))
+    carbon_budget = Column(Float)
+    ppp = Column(Integer)
+    is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(String(20))
+    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+    updated_by = Column(String(20))
+    
+    group = relationship("Group", back_populates="countries")
+    country_resources = relationship("CountryResource", back_populates="country")
+    initiated_auctions = relationship("AuctionInfo", back_populates="initiator")
+    auction_rounds_won = relationship("AuctionRound", back_populates="winner")
+    bids = relationship("AuctionBid", back_populates="country")
 
 class Resource(Base):
-    __tablename__ = "resources"
-    
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    base_price = Column(Float, nullable=False)
-    essentiality_factor = Column(Float, nullable=False, default=1.5)
-    global_supply = Column(Float, nullable=False)
-    
-    orders = relationship("Order", back_populates="resource")
-    trades = relationship("Trade", back_populates="resource")
+    __tablename__ = "resources"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    rname = Column(String(20), unique=True, nullable=False)
+    price = Column(Float)
+    description = Column(String(50))
+    
+    country_resources = relationship("CountryResource", back_populates="resource")
+    auctions = relationship("AuctionInfo", back_populates="resource")
 
-class CountryHolding(Base):
-    __tablename__ = "country_holdings"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    country_id = Column(String, ForeignKey("countries.id"), nullable=False)
-    resource_id = Column(String, ForeignKey("resources.id"), nullable=False)
-    quantity = Column(Float, nullable=False, default=0.0)
-    
-    country = relationship("Country", back_populates="holdings")
-    resource = relationship("Resource")
+class CountryResource(Base):
+    __tablename__ = "country_resources"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    country_id = Column(UUID(as_uuid=True), ForeignKey("countries.id"), nullable=False)
+    resource_id = Column(UUID(as_uuid=True), ForeignKey("resources.id"), nullable=False)
+    supply = Column(Integer)
+    demand = Column(Integer)
+    quantity = Column(Float)
+    unit = Column(String(50))
+    is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(String(50))
+    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+    updated_by = Column(String(50))
+    
+    country = relationship("Country", back_populates="country_resources")
+    resource = relationship("Resource", back_populates="country_resources")
 
-class Order(Base):
-    __tablename__ = "orders"
-    
-    id = Column(String, primary_key=True)
-    country_id = Column(String, ForeignKey("countries.id"), nullable=False)
-    resource_id = Column(String, ForeignKey("resources.id"), nullable=False)
-    order_type = Column(SQLEnum(OrderType), nullable=False)
-    side = Column(SQLEnum(OrderSide), nullable=False)
-    price = Column(Float)
-    quantity = Column(Float, nullable=False)
-    filled_quantity = Column(Float, default=0.0)
-    status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    country = relationship("Country", back_populates="orders")
-    resource = relationship("Resource", back_populates="orders")
+class AuctionInfo(Base):
+    __tablename__ = "auction_info"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    initiator_id = Column(UUID(as_uuid=True), ForeignKey("countries.id"), nullable=False)
+    resource_id = Column(UUID(as_uuid=True), ForeignKey("resources.id"), nullable=False)
+    quantity = Column(Integer)
+    base_price = Column(Float)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    
+    initiator = relationship("Country", back_populates="initiated_auctions")
+    resource = relationship("Resource", back_populates="auctions")
+    auction_groups = relationship("AuctionGroup", back_populates="auction")
 
-class Trade(Base):
-    __tablename__ = "trades"
-    
-    id = Column(String, primary_key=True)
-    buyer_id = Column(String, ForeignKey("countries.id"), nullable=False)
-    seller_id = Column(String, ForeignKey("countries.id"), nullable=False)
-    resource_id = Column(String, ForeignKey("resources.id"), nullable=False)
-    quantity = Column(Float, nullable=False)
-    price = Column(Float, nullable=False)
-    carbon_impact = Column(Float)
-    executed_at = Column(DateTime, default=datetime.utcnow)
-    
-    buyer = relationship("Country", foreign_keys=[buyer_id], back_populates="trades_as_buyer")
-    seller = relationship("Country", foreign_keys=[seller_id], back_populates="trades_as_seller")
-    resource = relationship("Resource", back_populates="trades")
+class AuctionGroup(Base):
+    __tablename__ = "auction_groups"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    auction_id = Column(UUID(as_uuid=True), ForeignKey("auction_info.id"), nullable=False)
+    group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id"), nullable=False)
+    
+    auction = relationship("AuctionInfo", back_populates="auction_groups")
+    group = relationship("Group", back_populates="auction_groups")
+    rounds = relationship("AuctionRound", back_populates="auction_group")
 
-class MarketPrice(Base):
-    __tablename__ = "market_prices"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    resource_id = Column(String, ForeignKey("resources.id"), nullable=False)
-    price = Column(Float, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+class AuctionRound(Base):
+    __tablename__ = "auction_rounds"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    auction_group_id = Column(UUID(as_uuid=True), ForeignKey("auction_groups.id"), nullable=False)
+    round_num = Column(Integer, nullable=False)
+    winner_id = Column(UUID(as_uuid=True), ForeignKey("countries.id"))
+    status = Column(String(20))
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    
+    auction_group = relationship("AuctionGroup", back_populates="rounds")
+    winner = relationship("Country", back_populates="auction_rounds_won")
+    bids = relationship("AuctionBid", back_populates="round")
+
+class AuctionBid(Base):
+    __tablename__ = "auction_bids"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    round_id = Column(UUID(as_uuid=True), ForeignKey("auction_rounds.id"), nullable=False)
+    country_id = Column(UUID(as_uuid=True), ForeignKey("countries.id"), nullable=False)
+    price = Column(Float)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    
+    round = relationship("AuctionRound", back_populates="bids")
+    country = relationship("Country", back_populates="bids")
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    table_name = Column(String(20))
+    record_id = Column(UUID(as_uuid=True))
+    action = Column(String(20))
+    changed_by = Column(String(20))
+    change_data = Column(JSONB)
+    timestamp = Column(DateTime, default=datetime.utcnow)

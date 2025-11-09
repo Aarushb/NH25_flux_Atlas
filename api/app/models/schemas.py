@@ -1,104 +1,134 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
-from enum import Enum
+from uuid import UUID
 
-class OrderTypeSchema(str, Enum):
-    LIMIT = "LIMIT"
-    MARKET = "MARKET"
+class GroupCreate(BaseModel):
+    name: str
+    low_ppp: Optional[int] = None
+    high_ppp: Optional[int] = None
+    description: Optional[str] = None
 
-class OrderSideSchema(str, Enum):
-    BUY = "BUY"
-    SELL = "SELL"
-
-class OrderStatusSchema(str, Enum):
-    PENDING = "PENDING"
-    PARTIAL = "PARTIAL"
-    FILLED = "FILLED"
-    CANCELLED = "CANCELLED"
+class GroupResponse(BaseModel):
+    id: UUID
+    name: str
+    low_ppp: Optional[int]
+    high_ppp: Optional[int]
+    description: Optional[str]
+    
+    class Config:
+        from_attributes = True
 
 class CountryCreate(BaseModel):
-    id: str
-    name: str
-    gdp_ppp: float
-    carbon_budget: Optional[float] = None
+    cname: str
+    group_id: Optional[UUID] = None
+    carbon_budget: Optional[float] = None
+    ppp: Optional[int] = None
+    created_by: Optional[str] = None
 
 class CountryResponse(BaseModel):
-    id: str
-    name: str
-    gdp_ppp: float
-    carbon_budget: Optional[float]
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
+    id: UUID
+    cname: str
+    group_id: Optional[UUID]
+    carbon_budget: Optional[float]
+    ppp: Optional[int]
+    is_deleted: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
 
 class ResourceCreate(BaseModel):
-    id: str
-    name: str
-    base_price: float
-    essentiality_factor: float = Field(ge=1.0, le=3.0)
-    global_supply: float
+    rname: str
+    price: Optional[float] = None
+    description: Optional[str] = None
 
 class ResourceResponse(BaseModel):
-    id: str
-    name: str
-    base_price: float
-    essentiality_factor: float
-    global_supply: float
-    
-    class Config:
-        from_attributes = True
+    id: UUID
+    rname: str
+    price: Optional[float]
+    description: Optional[str]
+  _ 
+    class Config:
+        from_attributes = True
 
-class OrderCreate(BaseModel):
-    country_id: str
-    resource_id: str
-    order_type: OrderTypeSchema
-    side: OrderSideSchema
-    price: Optional[float] = None
-    quantity: float
+class CountryResourceCreate(BaseModel):
+    country_id: UUID
+    resource_id: UUID
+    supply: Optional[int] = None
+    demand: Optional[int] = None
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    created_by: Optional[str] = None
 
-class OrderResponse(BaseModel):
-    id: str
-    country_id: str
-    resource_id: str
-    order_type: OrderTypeSchema
-    side: OrderSideSchema
-    price: Optional[float]
-    quantity: float
-    filled_quantity: float
-    status: OrderStatusSchema
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
+class CountryResourceResponse(BaseModel):
+    id: UUID
+    country_id: UUID
+    resource_id: UUID
+    supply: Optional[int]
+    demand: Optional[int]
+    quantity: Optional[float]
+    unit: Optional[str]
+    
+    class Config:
+        from_attributes = True
 
-class TradeResponse(BaseModel):
-    id: str
-    buyer_id: str
-    seller_id: str
-    resource_id: str
-    quantity: float
-    price: float
-    carbon_impact: Optional[float]
-    executed_at: datetime
-    
-    class Config:
-        from_attributes = True
+class AuctionInfoCreate(BaseModel):
+    initiator_id: UUID
+    resource_id: UUID
+    quantity: int
+    base_price: float
 
-class MarketPriceResponse(BaseModel):
-    resource_id: str
-    price: float
-    timestamp: datetime
-    
-    class Config:
-        from_attributes = True
+class AuctionInfoResponse(BaseModel):
+    id: UUID
+    initiator_id: UUID
+    resource_id: UUID
+    quantity: int
+    base_price: float
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
 
-class HoldingResponse(BaseModel):
-    country_id: str
-    resource_id: str
-    quantity: float
-    
-    class Config:
-        from_attributes = True
+class AuctionGroupCreate(BaseModel):
+    auction_id: UUID
+    group_id: UUID
+
+class AuctionGroupResponse(BaseModel):
+    id: UUID
+    auction_id: UUID
+    group_id: UUID
+    
+    class Config:
+        from_attributes = True
+
+class AuctionRoundCreate(BaseModel):
+    auction_group_id: UUID
+    round_num: int
+    status: str
+
+class AuctionRoundResponse(BaseModel):
+    id: UUID
+    auction_group_id: UUID
+    round_num: int
+    winner_id: Optional[UUID]
+    status: str
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+
+class AuctionBidCreate(BaseModel):
+    round_id: UUID
+    country_id: UUID
+    price: float
+
+class AuctionBidResponse(BaseModel):
+    id: UUID
+    round_id: UUID
+    country_id: UUID
+    price: float
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
