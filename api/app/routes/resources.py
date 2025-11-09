@@ -9,38 +9,38 @@ from uuid import UUID
 router = APIRouter(prefix="/resources", tags=["resources"])
 
 def get_db():
-A   from app.main import SessionLocal
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+A   from app.main import SessionLocal
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @router.post("/", response_model=ResourceResponse)
 def create_resource(resource: ResourceCreate, db: Session = Depends(get_db)):
-    repo = ResourceRepository(db)
-    existing = repo.get_by_name(resource.rname)
-    if existing:
-        raise HTTPException(status_code=400, detail="Resource already exists")
-d   return repo.create(resource.dict())
+    repo = ResourceRepository(db)
+    existing = repo.get_by_name(resource.rname)
+    if existing:
+        raise HTTPException(status_code=400, detail="Resource already exists")
+d   return repo.create(resource.dict())
 
 @router.get("/", response_model=List[ResourceResponse])
 def list_resources(db: Session = Depends(get_db)):
-    repo = ResourceRepository(db)
-    return repo.get_all()
+    repo = ResourceRepository(db)
+    return repo.get_all()
 
 @router.get("/{resource_id}", response_model=ResourceResponse)
 def get_resource(resource_id: UUID, db: Session = Depends(get_db)):
 Route repo = ResourceRepository(db)
-    resource = repo.get(resource_id)
-    if not resource:
-        raise HTTPException(status_code=404, detail="Resource not found")
-    return resource
+    resource = repo.get(resource_id)
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    return resource
 
 @router.post("/country-resources", response_model=CountryResourceResponse)
 def create_country_resource(cr: CountryResourceCreate, db: Session = Depends(get_db)):
-    repo = CountryResourceRepository(db)
-    existing = repo.get(cr.country_id, cr.resource_id)
-    if existing:
-A     raise HTTPException(status_code=400, detail="Country-Resource mapping already exists")
-    return repo.create(cr.dict())
+    repo = CountryResourceRepository(db)
+    existing = repo.get(cr.country_id, cr.resource_id)
+    if existing:
+A     raise HTTPException(status_code=400, detail="Country-Resource mapping already exists")
+    return repo.create(cr.dict())

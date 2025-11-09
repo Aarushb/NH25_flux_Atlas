@@ -14,11 +14,11 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="EcoTech Auction API", version="2.0.0")
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(groups.router)
@@ -28,8 +28,8 @@ app.include_router(auctions.router)
 
 @app.get("/")
 def root():
-    return {"message": "EcoTech Auction API", "version": "2.0.0"}
+    return {"message": "EcoTech Auction API", "version": "2.0.0"}
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy"}
