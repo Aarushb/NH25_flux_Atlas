@@ -3,151 +3,296 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
-from datetime import datetime
-from enum import Enum
-import math  # <-- FIX 1: Import math
-from models.cluster_enums import CountryClusters
+import math
+
+# --- Models & Data ---
 from models.resourcess import Resource
 from models.country import Country
 from models.cluster import ClusterInfo  
+from models.cluster_enums import CountryClusters
+
+# --- Auction Primitives (Not used in this sim) ---
 from auction import AuctionStatus, Bid, Auction 
 
-
-
 @dataclass
-# class AuctionManager(Enum):     # <-- FIX 4: This should not be an Enum
 class AuctionManager:
+    """
+    Holds the state of auctions for a specific cluster.
+    The main simulation logic is outside this class, but the
+    laplace method is a static helper used by the simulation.
+    """
     cluster: ClusterInfo
     auctions: List[Auction] = field(default_factory=list)
     
-    # FIX 5: This should be a staticmethod to be called without an instance
     @staticmethod
-    # FIX 6: The method signature was invalid. Use simple types.
-    def laplace(base_price: float, supply: float, demand: float, quantity:float, min_b:int=1 , min_w:int=0.0001, k:int=0.1):
+    def laplace(base_price: float, supply: float, demand: float, quantity:float, min_b:int=1 , min_w:int=0.0001, k:int=0.3) -> (float, bool):
+        """
+        Calculates a country's valuation (v_value) for a resource.
+        This is the "bidder's brain" to decide its max bid.
+        
+        Returns:
+            (v_value, accepted) - A tuple of the calculated max price and a
+                                 boolean indicating if the bid is acceptable.
+        """
         # 1. Handle invalid base price
         if base_price <= 0:
             raise ValueError("Base price must be > 0")
     
         # 2. Avoid division by zero
         if supply <= 0:
-            max_increase = 1
+            max_increase = 1.0
         else:
             # Note: This logic might be flawed if demand < supply
-            max_increase = min(1, (demand/supply)-1)
+            max_increase = min(1.0, (demand / supply) - 1.0)
+            if max_increase < 0: # Handle cases where supply > demand
+                max_increase = 0.0
          
         # 3. Compute b, ensure it never hits zero
         b = max(abs(demand) * k, float(min_b))
     
         # 4. Distance from ideal offer
-        # FIX 7: 'market_offer' was undefined. I've added it to the method arguments.
-        # NEW
         distance = abs(quantity - demand)
     
         # 5. Laplace decay weight
-        w = math.exp(- distance / b)
+        w = math.exp(-distance / b)
     
-        # 6. Compute final adjusted value
+        # 6. Compute final adjusted value (v_value)
         multiplier = 1.0 + max_increase * w
-        v = base_price * multiplier
+        v_value = base_price * multiplier
     
         # 7. Threshold accept/reject
-        if w < min_w or v < base_price:
-            return v, False
-        return v, True
+        if w < min_w or v_value < base_price:
+            return v_value, False
+        return v_value, True
 
+# --- MAIN SIMULATION LOGIC ---
 
+def run_simulation(seller: Country, resource_name: str, total_quantity: float, base_price: float):
+    """
+    Runs the full Vickrey (second-price) auction simulation.
     
+    This function uses helper methods from all other files:
+    - `cluster_enums.py`: To loop through `CountryClusters`.
+    - `cluster.py`: To call `assign_auction_quantity` which calculates batches.
+    - `country.py`: To call `get_resource`/`get_demand` and update `budget`/`resources`.
+    - `auction_manager.py`: To call `laplace` for bid decisions.
+    """
+    print(f"--- STARTING SIMULATION ---")
+    print(f"  Seller: {seller.name}")
+    print(f"  Resource: {resource_name}")
+    print(f"  Total Quantity for Auction: {total_quantity}")
+    print(f"  Base (Reserve) Price: ${base_price}B per unit")
+    
+    seller_resource = seller.get_resource(resource_name)
+
+    if not seller_resource or seller_resource.amount < total_quantity:
+        print(f"\nSIMULATION FAILED: Seller does not have enough {resource_name} to auction.")
+        print(f"  Has: {seller_resource.amount if seller_resource else 0}, Needs: {total_quantity}")
+        return
+
+    resource_unit = seller_resource.unit
+    
+    print("\n[Phase 1: Calculating proportional distribution...]")
+    total_countries_in_world = sum(cluster_enum.value.country_count for cluster_enum in CountryClusters)
+    print(f"  Total countries in all clusters: {total_countries_in_world}")
+    print(f"  Distributing {total_quantity} units proportionally.")
+
+    for cluster_enum in CountryClusters:
+        cluster_info = cluster_enum.value
+        cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world)
+    
+    print("\n[Phase 2: Verifying batch assignments...]")
+    total_planned_quantity = 0.0
+    for cluster_enum in CountryClusters:
+        cluster_info = cluster_enum.value
+        print(f"  {cluster_info.name:<28}: Assigned {cluster_info.auction_quantity:6.2f} units")
+        total_planned_quantity += cluster_info.auction_quantity
+    print(f"  {'-'*28}: {'-'*6}")
+    print(f"  {'Total Planned Quantity':<28}: {total_planned_quantity:6.2f} (Should match {total_quantity})")
 
 
+    print("\n" + "="*70)
+    print("STARTING BATCH AUCTIONS")
+    print("="*70)
+
+    live_auction_stock = total_quantity
+
+    for cluster_enum in CountryClusters:
+        cluster_info = cluster_enum.value
+        print(f"\n--- Processing Cluster: {cluster_info.name} ---")
+        
+        sorted_batch_nums = sorted(cluster_info.auction_batches.keys())
+        if not sorted_batch_nums:
+            print("  No batches to process for this cluster.")
+            continue
+
+        for batch_num in sorted_batch_nums:
+            quantity = cluster_info.get_batch_quantity(batch_num)
+            
+            if quantity == 0:
+                continue # Skip empty batches
+            
+            print(f"\n  --- Batch {batch_num} | Quantity: {quantity:.2f} {resource_unit} ---")
+
+            if live_auction_stock < quantity:
+                print(f"  SELLER STOCK LOW: Not enough auction stock for this batch (Needs: {quantity:.2f}, Has: {live_auction_stock:.2f}).")
+                print(f"  AUCTION FOR {cluster_info.name} ENDED.")
+                break # Stop processing batches for this cluster
+            
+            bids = [] # List to store (v_value, country)
+            for country in cluster_info.countries:
+            
+                if country.name == seller.name:
+                    continue
+                    
+                demand_res = country.get_demand(resource_name)
+                if not demand_res or demand_res.amount <= 0:
+                    continue
+                    
+                supply_res = country.get_resource(resource_name)
+                supply = supply_res.amount if supply_res else 0.0
+                demand = demand_res.amount
+                
+                v_value, accepted = AuctionManager.laplace(
+                    base_price=base_price,
+                    supply=supply,
+                    demand=demand,
+                    quantity=quantity
+                )
+                
+                if accepted:
+                    print(f"    {country.name:<13}: Bid ACCEPTED (v_value: ${v_value:.4f}B)")
+                    bids.append((v_value, country))
+                else:
+                    print(f"    {country.name:<13}: Bid REJECTED (v_value: ${v_value:.4f}B)")
+            
+            if not bids:
+                print("    RESULT: No bids for this batch.")
+                continue # Move to next batch
+                
+            bids.sort(key=lambda x: x[0], reverse=True)
+            
+            winner_bid_v_value, winner = bids[0]
+            
+            price_per_unit = 0.0
+            
+            if len(bids) == 1:
+                print(f"    RESULT: Only one bidder ({winner.name}).")
+                price_per_unit = base_price
+                print(f"    Winner pays reserve (base) price.")
+            else:
+                # Vickrey: Winner pays second-highest bid
+                second_highest_v_value = bids[1][0]
+                price_per_unit = second_highest_v_value
+                print(f"    RESULT: {len(bids)} bidders.")
+                print(f"    Winner: {winner.name:<13} (Bid Value: ${winner_bid_v_value:.4f}B)")
+                print(f"    Winner Pays (2nd Price): ${price_per_unit:.4f}B per unit")
+            
+            total_cost = price_per_unit * quantity
+            
+            # Updates directly reflect in the Country object
+            if winner.budget < total_cost:
+                print(f"    WINNER {winner.name} FAILED: Insufficient budget.")
+                print(f"      Budget: ${winner.budget:.2f}B, Cost: ${total_cost:.2f}B")
+                continue # Skip to next batch
+                
+            print(f"    TRANSACTION:")
+            print(f"      {winner.name:<13} pays ${total_cost:.2f}B")
+            print(f"      {seller.name:<13} receives ${total_cost:.2f}B")
+
+            winner.budget -= total_cost
+            seller.budget += total_cost
+            
+            seller_resource.amount -= quantity
+            live_auction_stock -= quantity # Decrement live tracker
+            
+            winner_resource = winner.get_resource(resource_name)
+            if winner_resource:
+                winner_resource.amount += quantity
+            else:
+                winner.resources[resource_name] = Resource(amount=quantity, unit=resource_unit)
+            
+            print(f"    New Balances:")
+            print(f"      {winner.name:<13}: Budget ${winner.budget:6.2f}B, {resource_name}: {winner.get_resource(resource_name).amount:.2f}")
+            print(f"      {seller.name:<13}: Budget ${seller.budget:6.2f}B, {resource_name}: {seller_resource.amount:.2f}")
+            print(f"      (Auction Stock Remaining: {live_auction_stock:.2f})")
+
+    print("\n" + "="*70)
+    print("SIMULATION COMPLETE")
+    print("="*70)
 
 
-
-
-
-
-
-
+# -----------------------------------------------------------------
+# --- MAIN EXECUTION BLOCK ---
+# -----------------------------------------------------------------
 if __name__ == "__main__":
-    print("="*70)
-    print("LAPLACE FOR ONE COUNTRY, ONE QUANTITY")
-    print("="*70)
     
-    # Get cluster
-    cluster = CountryClusters.GROUP5.value
+    # --- Setup: Find the 'live' Seller Country object ---
+    # We must get the actual object from the enum, not a new instance
+    seller_country = None
+    for country in CountryClusters.GROUP5.value.countries:
+        if country.name == "Russia":
+            seller_country = country
+            break
     
-    # Assign auction quantity (batches auto-calculated)
-    cluster.assign_auction_quantity(total_quantity=100.0, total_clusters=6)
-    
-    print(f"\n📦 Batches in cluster.auction_batches:")
-    for batch_num, quantity in cluster.auction_batches.items():
-        print(f"   Batch {batch_num}: {quantity:.2f} units")
-    
-    # --- START OF FIX ---
-    
-    # Get the BIDDER country (Japan)
-    japan = next(c for c in cluster.countries if c.name == "Japan")
-    
-    # Get Japan's internal supply (which is 0)
-    japan_supply_res = japan.get_resource("PETROLEUM")
-    supply = japan_supply_res.amount if japan_supply_res else 0.0
-    
-    # Get Japan's internal demand (which is 100)
-    japan_demand_res = japan.get_demand("PETROLEUM")
-    demand = japan_demand_res.amount if japan_demand_res else 0.0
-    
-    if demand == 0.0:
-        print("Error: Japan has no demand data for PETROLEUM")
+    if not seller_country:
+        print("Error: Seller country 'Russia' not found in GROUP5.")
         sys.exit(1)
+        
+    # --- Print Initial State ---
+    print("="*70)
+    print("PRE-SIMULATION STATE")
+    print("="*70)
+    
+    # Store initial state for summary
+    initial_seller_budget = seller_country.budget
+    seller_petroleum = seller_country.get_resource('PETROLEUM')
+    initial_seller_resource_amount = seller_petroleum.amount if seller_petroleum else 0.0
+    
+    print(f"Seller: {seller_country.name}")
+    print(f"  Initial Budget: ${initial_seller_budget:.2f}B")
+    if seller_petroleum:
+        print(f"  Initial PETROLEUM: {initial_seller_resource_amount:.2f} {seller_petroleum.unit}")
+    else:
+        print("  Initial PETROLEUM: 0.0 (Data not found)")
 
-    # --- END OF FIX ---
+    print("\nPotential Bidders (from all clusters):")
+    for cluster_enum in CountryClusters:
+        for country in cluster_enum.value.countries:
+            if country.name == seller_country.name:
+                continue
+            demand_info = country.get_demand('PETROLEUM')
+            if demand_info and demand_info.amount > 0:
+                print(f"  - {country.name:<13} (Cluster: {cluster_enum.name}): Budget ${country.budget:6.2f}B, Demand: {demand_info.amount}")
     
-    # Get one batch quantity
-    batch_1_quantity = cluster.auction_batches[1]
-    
-    print(f"\n📊 Parameters (for Japan as Bidder):")
-    print(f"   Supply (Japan's Internal):  {supply:.2f} billion barrels")
-    print(f"   Demand (Japan's Internal):  {demand:.2f} billion barrels")
-    print(f"   Quantity (Batch 1): {batch_1_quantity:.2f} billion barrels")
-    print(f"   Base Price:       $0.5B per unit")
-    
-    # Create manager
-    manager = AuctionManager(cluster)
-    
-    # Apply Laplace for one country, one quantity
+    # --- Run the Simulation ---
+    TOTAL_AUCTION_QUANTITY = 50.0
+    run_simulation(
+        seller=seller_country,
+        resource_name="COAL",
+        total_quantity=TOTAL_AUCTION_QUANTITY,  # Selling 50 billion barrels
+        base_price=0.05        # Base price is $0.5B per unit
+    )
+
+    # --- Print Final State ---
     print("\n" + "="*70)
-    print("APPLYING LAPLACE")
+    print("POST-SIMULATION STATE")
     print("="*70)
     
-    adjusted_price, accepted = manager.laplace(
-        base_price=0.5,
-        supply=supply,
-        demand=demand,
-        quantity=batch_1_quantity  # From cluster.auction_batches
-        # market_offer=0 <-- REMOVED
-    )
+    final_seller_budget = seller_country.budget
+    final_seller_resource = seller_country.get_resource('PETROLEUM')
+    final_seller_resource_amount = final_seller_resource.amount if final_seller_resource else 0.0
     
-    print(f"\n💰 Result:")
-    print(f"   Adjusted Price:  ${adjusted_price:.4f}B per unit")
-    print(f"   Multiplier:      {adjusted_price / 0.5:.4f}x")
-    print(f"   Status:          {'✓ ACCEPTED' if accepted else '✗ REJECTED'}")
+    print(f"--- Summary for Seller: {seller_country.name} ---")
+    print(f"  Budget Change: ${initial_seller_budget:.2f}B  ->  ${final_seller_budget:.2f}B  (+${final_seller_budget - initial_seller_budget:.2f}B)")
+    print(f"  PETROLEUM Change: {initial_seller_resource_amount:.2f}  ->  {final_seller_resource_amount:.2f}  (-{initial_seller_resource_amount - final_seller_resource_amount:.2f})")
     
-    # Try with different batch
-    print("\n" + "="*70)
-    print("TRYING WITH BATCH 3")
-    print("="*70)
-    
-    batch_3_quantity = cluster.auction_batches[4]
-    print(f"   Quantity (Batch 3): {batch_3_quantity:.2f} billion barrels")
-    
-    adjusted_price_3, accepted_3 = manager.laplace(
-        base_price=0.5,
-        supply=supply,
-        demand=demand,
-        quantity=batch_3_quantity,  # Different batch quantity
-        # market_offer=0 <-- REMOVED
-    )
-    
-    print(f"\n💰 Result:")
-    print(f"   Adjusted Price:  ${adjusted_price_3:.4f}B per unit")
-    print(f"   Multiplier:      {adjusted_price_3 / 0.5:.4f}x")
-    print(f"   Status:          {'✓ ACCEPTED' if accepted_3 else '✗ REJECTED'}")
+    print("\n--- Final State for All Participants ---")
+    for cluster_enum in CountryClusters:
+        print(f"\n--- {cluster_enum.name} ---")
+        for country in cluster_enum.value.countries:
+            petrol = country.get_resource('PETROLEUM')
+            petrol_amount = petrol.amount if petrol else 0.0
+            print(f"  {country.name:<13} | Budget: ${country.budget:6.2f}B | PETROLEUM: {petrol_amount:.2f}")
+
+    print("\n--- SIMULATION SCRIPT END ---")

@@ -60,19 +60,24 @@ class ClusterInfo:
         
         return country_budgets
     
-    def assign_auction_quantity(self, total_quantity: float, total_clusters: int = 6) -> None:
+    def assign_auction_quantity(self, total_auction_quantity: float, total_countries_in_world: int) -> None:
         """
-        Calculate and assign the auction quantity for this cluster.
-        Also automatically calculates and stores batch quantities.
-        Called when an auction starts.
+        Calculate and assign the auction quantity for this cluster based on its
+        proportional share of the total world countries.
         
         Args:
-            total_quantity: Total resource quantity to distribute
-            total_clusters: Total number of clusters (default: 6)
+            total_auction_quantity: Total resource quantity to distribute (e.g., 50.0)
+            total_countries_in_world: The sum of countries in all clusters (e.g., 30)
         """
-        self.auction_quantity = (total_quantity / total_clusters) * self.country_count
+        if total_countries_in_world == 0:
+            self.auction_quantity = 0
+        else:
+            # --- THIS IS THE FIXED FORMULA ---
+            # (Cluster Country Count / Total World Countries) * Total Quantity
+            proportional_share = float(self.country_count) / float(total_countries_in_world)
+            self.auction_quantity = total_auction_quantity * proportional_share
         
-        # Automatically calculate and store batches
+        # Automatically calculate and store batches based on this new quantity
         self._calculate_and_store_batches()
     
     def _calculate_and_store_batches(self) -> None:
