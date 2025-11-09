@@ -19,6 +19,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Set
 import random
+import time
 
 from models.resourcess import Resource
 from models.country import Country
@@ -31,7 +32,9 @@ from auction_manager import AuctionManager
 class BatchAuction:
     """
     Represents a single batch within a cluster's auction sequence.
-    Uses the same Vickrey (second-price) mechanism as auction_manager.py
+    Each batch lasts exactly 1 turn:
+    - Turn N: Batch created, bidding happens
+    - Turn N+1: Batch finalized, results shown
     """
     batch_id: str  # Format: "auction_{auction_id}_cluster_{cluster_name}_batch_{batch_num}"
     parent_auction_id: int
@@ -42,14 +45,18 @@ class BatchAuction:
     quantity: float
     resource_unit: str
     base_price: float
-    rounds_remaining: int = 4
+    turn_created: int  # Track when batch was created
     bids: List[tuple] = field(default_factory=list)  # List of (country, v_value)
-    is_completed: bool = False
+    is_finalized: bool = False
     winner: Optional[Country] = None
     final_price_per_unit: float = 0.0
     
     def add_bid(self, country: Country, v_value: float) -> bool:
         """Add a bid from a country using Laplace valuation."""
+        # Can't bid on finalized batch
+        if self.is_finalized:
+            return False
+            
         # Check if country already bid
         for existing_bidder, _ in self.bids:
             if existing_bidder.name == country.name:
@@ -63,18 +70,17 @@ class BatchAuction:
         self.bids.append((country, v_value))
         return True
     
-    def advance_round(self):
-        """Advance the batch auction by one round."""
-        if self.rounds_remaining > 0:
-            self.rounds_remaining -= 1
-    
     def finalize(self) -> bool:
         """
         Finalize batch using Vickrey (second-price) mechanism.
-        Exactly matches the logic in auction_manager.py's run_simulation.
+        Returns True if there was a successful trade, False otherwise.
         """
+        if self.is_finalized:
+            return False
+            
+        self.is_finalized = True
+        
         if len(self.bids) == 0:
-            self.is_completed = True
             return False
         
         # Sort bids by v_value (highest first)
@@ -93,7 +99,7 @@ class BatchAuction:
         
         # Verify winner has budget
         if self.winner.budget < total_cost:
-            self.is_completed = True
+            self.winner = None  # Clear winner if they can't afford
             return False
         
         # Transfer money
@@ -113,7 +119,6 @@ class BatchAuction:
                 unit=self.resource_unit
             )
         
-        self.is_completed = True
         return True
 
 
@@ -134,7 +139,7 @@ class ClusterAuctionState:
     current_batch_number: int = 1
     all_batches_complete: bool = False
     
-    def create_batch_auctions_for_turn(self, batch_number: int, all_clusters: List) -> List[BatchAuction]:
+    def create_batch_auctions_for_turn(self, batch_number: int, all_clusters: List, current_turn: int) -> List[BatchAuction]:
         """
         Create batch auctions for a specific batch number across all clusters.
         Returns list of BatchAuction objects for this batch.
@@ -162,7 +167,8 @@ class ClusterAuctionState:
                 resource_name=self.resource_name,
                 quantity=quantity,
                 resource_unit=self.resource_unit,
-                base_price=self.base_price
+                base_price=self.base_price,
+                turn_created=current_turn
             )
             
             self.batch_auctions[cluster_info.name] = batch
@@ -201,8 +207,8 @@ class TurnBasedSimulation:
             print("="*70)
             print(f"Total Countries: {len(self.all_countries)}")
             print(f"Max Turns: {self.max_turns}")
-            print(f"Batch Duration: 4 rounds per batch")
-            print(f"Cluster System: Proportional distribution + halving batches\n")
+            print("Batch Duration: 1 turn per batch")
+            print("Cluster System: Proportional distribution + halving batches\n")
         
         for turn in range(1, self.max_turns + 1):
             self.turn_number = turn
@@ -216,18 +222,18 @@ class TurnBasedSimulation:
             elif verbosity == "concise":
                 print(f"\n=== TURN {turn} | Batch Auctions: {len(self.active_batch_auctions)} | Cluster Auctions: {len(self.active_cluster_auctions)} ===")
             
-            # Phase 1: Each country takes their turn
+            # Phase 1: Finalize batches from previous turn (show results FIRST)
+            self.finalize_previous_turn_batches(verbosity)
+            
+            # Phase 2: Each country takes their turn (start auctions, place bids)
             for country in self.all_countries:
                 self.country_turn(country, verbosity)
             
-            # Phase 2: Advance all batch auction rounds
-            self.advance_all_batches(verbosity)
-            
-            # Phase 3: Finalize completed batches
-            self.finalize_completed_batches(verbosity)
-            
-            # Phase 4: Progress cluster auctions to next batch
+            # Phase 3: Progress cluster auctions to next batch if current batch is done
             self.progress_cluster_auctions(verbosity)
+            
+            # Add 2-second delay between turns
+            time.sleep(2)
         
         if verbosity != "none":
             print(f"\n{'='*70}")
@@ -252,9 +258,9 @@ class TurnBasedSimulation:
             )
             if success and verbosity != "none":
                 if verbosity == "concise":
-                    print(f"  {country.name} started auction: {action['quantity']:.2f} {action['resource']} @ ${action['base_price']:.4f}B/unit")
+                    print(f"  {country.name} started auction: {action['quantity']:.4f} {action['resource']} @ ${action['base_price']:.4f}B/unit")
                 elif verbosity == "verbose":
-                    print(f"  {country.name}: Started cluster auction for {action['quantity']:.2f} {action['resource']}")
+                    print(f"  {country.name}: Started cluster auction for {action['quantity']:.4f} {action['resource']}")
         
         elif action["type"] == "BID":
             success = self.place_bid_on_batch(country, action["batch"], verbosity)
@@ -362,7 +368,7 @@ class TurnBasedSimulation:
         )
         
         # Create batch 1 auctions for all clusters
-        batch_1_auctions = auction_state.create_batch_auctions_for_turn(1, CountryClusters)
+        batch_1_auctions = auction_state.create_batch_auctions_for_turn(1, CountryClusters, self.turn_number)
         self.active_batch_auctions.extend(batch_1_auctions)
         
         self.active_cluster_auctions[self.next_auction_id] = auction_state
@@ -398,14 +404,13 @@ class TurnBasedSimulation:
         # Add bid to batch
         return batch.add_bid(country, v_value)
     
-    def advance_all_batches(self, verbosity: str):
-        """Advance all active batch auctions by one round."""
-        for batch in self.active_batch_auctions:
-            batch.advance_round()
-    
-    def finalize_completed_batches(self, verbosity: str):
-        """Finalize batches that have completed (rounds_remaining == 0)."""
-        batches_to_finalize = [b for b in self.active_batch_auctions if b.rounds_remaining == 0]
+    def finalize_previous_turn_batches(self, verbosity: str):
+        """
+        Finalize batches that were created in the previous turn.
+        This shows the results BEFORE new actions happen.
+        """
+        batches_to_finalize = [b for b in self.active_batch_auctions 
+                               if not b.is_finalized and b.turn_created < self.turn_number]
         
         for batch in batches_to_finalize:
             had_winner = batch.finalize()
@@ -414,31 +419,31 @@ class TurnBasedSimulation:
                 if had_winner:
                     total_paid = batch.final_price_per_unit * batch.quantity
                     if verbosity == "concise":
-                        print(f"  ✓ Batch #{batch.batch_id}: {batch.seller.name} → {batch.winner.name} | {batch.quantity:.2f} {batch.resource_name} for ${total_paid:.2f}B")
+                        print(f"  ✓ Batch #{batch.batch_id}: {batch.seller.name} → {batch.winner.name} | {batch.quantity:.4f} {batch.resource_name} for ${total_paid:.4f}B")
                     elif verbosity == "verbose":
                         print(f"  ✓ Batch COMPLETE: {batch.batch_id}")
                         print(f"     {batch.seller.name} → {batch.winner.name}")
-                        print(f"     {batch.quantity:.2f} {batch.resource_unit} for ${total_paid:.2f}B")
+                        print(f"     {batch.quantity:.4f} {batch.resource_unit} for ${total_paid:.4f}B")
                 else:
                     if verbosity == "concise":
                         print(f"  ✗ Batch #{batch.batch_id}: No valid bids")
             
-            # Remove from active
+            # Remove from active and mark as complete
             self.active_batch_auctions.remove(batch)
             self.completed_batch_auctions.append(batch)
     
     def progress_cluster_auctions(self, verbosity: str):
         """
-        Check if all batches for current batch number are complete.
+        Check if all batches for current batch number are finalized.
         If so, create next batch's auctions.
         """
         auctions_to_remove = []
         
         for auction_id, auction_state in self.active_cluster_auctions.items():
-            # Check if all batches for current batch number are complete
+            # Check if all batches for current batch number are finalized
             current_batch_complete = True
             for cluster_name, batch in auction_state.batch_auctions.items():
-                if not batch.is_completed:
+                if not batch.is_finalized:
                     current_batch_complete = False
                     break
             
@@ -462,7 +467,8 @@ class TurnBasedSimulation:
                     auction_state.batch_auctions.clear()  # Clear previous batch tracking
                     next_batches = auction_state.create_batch_auctions_for_turn(
                         auction_state.current_batch_number,
-                        CountryClusters
+                        CountryClusters,
+                        self.turn_number
                     )
                     self.active_batch_auctions.extend(next_batches)
                     
@@ -491,7 +497,7 @@ if __name__ == "__main__":
     print(f"  - Failed (no bids): {len(failed_auctions)}")
     
     total_value_traded = sum(b.final_price_per_unit * b.quantity for b in successful_auctions)
-    print(f"Total Value Traded: ${total_value_traded:.2f}B")
+    print(f"Total Value Traded: ${total_value_traded:.4f}B")
     
     # Count unique sellers
     unique_sellers = set(b.seller.name for b in successful_auctions)
