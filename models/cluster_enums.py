@@ -117,6 +117,5 @@ if __name__ == "__main__":
         print(f"\n--- {cluster.name}: {cluster.value.name} ---")
         print(f"Total Cluster Budget: ${cluster.value.budget}B\n")
         
-        # Budgets are already assigned to countries automatically!
         for country in cluster.value.countries:
             print(f"{country.name}: ${country.budget:.2f}B")

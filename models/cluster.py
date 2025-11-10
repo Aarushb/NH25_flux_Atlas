@@ -12,7 +12,7 @@ class ClusterInfo:
     max_ppp: int
     budget: float = 0.0
     auction_quantity: Optional[float] = None
-    auction_batches: Dict[int, float] = field(default_factory=dict)  # Store batches here
+    auction_batches: Dict[int, float] = field(default_factory=dict)  
     
     def __post_init__(self):
         """After initialization, calculate and assign budgets to all countries."""
@@ -73,12 +73,9 @@ class ClusterInfo:
         if total_countries_in_world == 0:
             self.auction_quantity = 0.0
         else:
-            # --- THIS IS THE FIXED FORMULA (WEIGHTED DISTRIBUTION) ---
-            # (Cluster Country Count / Total World Countries) * Total Quantity
             proportional_share = float(self.country_count) / float(total_countries_in_world)
             self.auction_quantity = total_auction_quantity * proportional_share
         
-        # Automatically calculate and store batches based on this new quantity
         self._calculate_and_store_batches(seller)
     
     def _calculate_and_store_batches(self, seller: Country = None) -> None:
@@ -90,18 +87,13 @@ class ClusterInfo:
             self.auction_batches = {}
             return
         
-        # --- [THIS IS THE FIX] ---
-        # 'n' is the number of countries, *excluding* the seller if they are in this cluster.
         n = self.country_count
         if seller and seller in self.countries:
-            n -= 1 # Do not count the seller in 'n'
+            n -= 1 
             
-        # num_batches is (n-1), where n is potential bidders.
-        # Use max(1, ...) to avoid num_batches = 0.
         num_batches = max(1, n - 1)
         
         if n <= 1:
-            # Edge case: only 1 potential bidder (or 0), all quantity in batch 1
             self.auction_batches = {1: self.auction_quantity}
             return
         
@@ -110,11 +102,9 @@ class ClusterInfo:
         
         for batch_num in range(1, num_batches + 1):
             if batch_num == num_batches:
-                # Last batch gets all remaining quantity
                 self.auction_batches[batch_num] = remaining_quantity
                 remaining_quantity = 0.0
             else:
-                # Current batch gets half of remaining
                 batch_quantity = remaining_quantity / 2.0
                 self.auction_batches[batch_num] = batch_quantity
                 remaining_quantity -= batch_quantity
@@ -148,7 +138,6 @@ class ClusterInfo:
                 "error": "No batches calculated. Call assign_auction_quantity() first."
             }
         
-        # Avoid division by zero if total_quantity is 0
         total_qty_safe = self.auction_quantity if self.auction_quantity > 0 else 1.0
         
         return {
