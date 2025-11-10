@@ -41,7 +41,6 @@ export default function LandingHero() {
   }, []);
 
   const onArrowClick = () => {
-    // dispatch navigation intent for the app to open the login page
     window.dispatchEvent(new CustomEvent("navigate:login"));
     const target = document.getElementById("main-content");
     if (target) {

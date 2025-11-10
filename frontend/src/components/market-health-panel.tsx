@@ -230,6 +230,15 @@ function SpiderChart({ values = [0.6, 0.7, 0.5, 0.8, 0.65], start = true, startD
 
 export default function MarketHealthPanel() {
   const [ready, setReady] = useState(false);
+  const [open, setOpen] = useState([true, true, true]);
+
+  const toggle = (i: number) => {
+    setOpen((prev) => {
+      const copy = [...prev];
+      copy[i] = !copy[i];
+      return copy;
+    });
+  };
 
   useEffect(() => {
     const onGone = () => setReady(true);
@@ -246,40 +255,61 @@ export default function MarketHealthPanel() {
   return (
     <div className="market-health grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
       <Card data-parallax="true">
-        <ParallaxWrapper>
-          <CardContent className="flex flex-col gap-2 items-start">
+        <div className="flex items-center justify-between mb-2">
           <div className="text-sm text-muted-foreground">Projected Global Welfare Score</div>
-          <div className="flex items-center gap-4 w-full justify-between">
-              <div className="flex flex-col">
-              <CountUp to={87} start={ready} startDelay={350} />
-              <div className="text-xs text-muted-foreground">Economic Value Creation</div>
-            </div>
-            <div className="ml-auto">
-              <Sparkline start={ready} startDelay={700} />
-            </div>
-          </div>
-          </CardContent>
-        </ParallaxWrapper>
+          <button className="btn" onClick={() => toggle(0)} aria-expanded={open[0]} aria-controls="mh-1">
+            {open[0] ? "−" : "+"}
+          </button>
+        </div>
+        {open[0] && (
+          <ParallaxWrapper>
+            <CardContent id="mh-1" className="flex flex-col gap-2 items-start">
+              <div className="flex items-center gap-4 w-full justify-between">
+                <div className="flex flex-col">
+                  <CountUp to={87} start={ready} startDelay={350} />
+                  <div className="text-xs text-muted-foreground">Economic Value Creation</div>
+                </div>
+                <div className="ml-auto">
+                  <Sparkline start={ready} startDelay={700} />
+                </div>
+              </div>
+            </CardContent>
+          </ParallaxWrapper>
+        )}
       </Card>
 
       <Card data-parallax="true">
-        <ParallaxWrapper>
-          <CardContent className="flex flex-col items-center justify-center gap-2">
+        <div className="flex items-center justify-between mb-2">
           <div className="text-sm text-muted-foreground">Carbon Reduction</div>
-          <CircularProgress percent={65} start={ready} startDelay={1100} />
-          <div className="text-xs text-muted-foreground">65% Reduction</div>
-          </CardContent>
-        </ParallaxWrapper>
+          <button className="btn" onClick={() => toggle(1)} aria-expanded={open[1]} aria-controls="mh-2">
+            {open[1] ? "−" : "+"}
+          </button>
+        </div>
+        {open[1] && (
+          <ParallaxWrapper>
+            <CardContent id="mh-2" className="flex flex-col items-center justify-center gap-2">
+              <CircularProgress percent={65} start={ready} startDelay={1100} />
+              <div className="text-xs text-muted-foreground">65% Reduction</div>
+            </CardContent>
+          </ParallaxWrapper>
+        )}
       </Card>
 
       <Card data-parallax="true">
-        <ParallaxWrapper>
-          <CardContent className="flex flex-col items-center gap-2">
+        <div className="flex items-center justify-between mb-2">
           <div className="text-sm text-muted-foreground">Fairness Index</div>
-          <SpiderChart start={ready} startDelay={1500} />
-          <div className="text-xs text-muted-foreground">Current vs Ideal</div>
-          </CardContent>
-        </ParallaxWrapper>
+          <button className="btn" onClick={() => toggle(2)} aria-expanded={open[2]} aria-controls="mh-3">
+            {open[2] ? "−" : "+"}
+          </button>
+        </div>
+        {open[2] && (
+          <ParallaxWrapper>
+            <CardContent id="mh-3" className="flex flex-col items-center gap-2">
+              <SpiderChart start={ready} startDelay={1500} />
+              <div className="text-xs text-muted-foreground">Current vs Ideal</div>
+            </CardContent>
+          </ParallaxWrapper>
+        )}
       </Card>
     </div>
   );
