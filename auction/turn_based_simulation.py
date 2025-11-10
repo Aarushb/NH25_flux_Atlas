@@ -53,14 +53,17 @@ class BatchAuction:
         # Check if country already bid
         for existing_bidder, _ in self.bids:
             if existing_bidder.name == country.name:
+                print(f"[ADD_BID] REJECT duplicate bid: {country.name} on {self.batch_id}")
                 return False
         
         # Check if bidder has enough budget
         total_cost = v_value * self.quantity
         if country.budget < total_cost:
+            print(f"[ADD_BID] REJECT insufficient budget: {country.name} needs {total_cost:.4f} but has {country.budget:.4f}")
             return False
         
         self.bids.append((country, v_value))
+        print(f"[ADD_BID] ACCEPTED bid: {country.name} on {self.batch_id} v_value={v_value:.6f} total_cost={total_cost:.4f}")
         return True
     
     def advance_round(self):
@@ -81,6 +84,8 @@ class BatchAuction:
         sorted_bids = sorted(self.bids, key=lambda x: x[1], reverse=True)
         
         self.winner, winner_bid_v_value = sorted_bids[0]
+        # DEBUG: show bid ranking
+        print(f"[FINALIZE] Batch {self.batch_id} bids (highest->lowest): " + ", ".join([f"{b.name}:{v:.6f}" for b, v in sorted_bids]))
         
         # Vickrey pricing: winner pays second-highest bid or base price
         if len(sorted_bids) == 1:
@@ -88,6 +93,8 @@ class BatchAuction:
         else:
             _, second_highest_v_value = sorted_bids[1]
             self.final_price_per_unit = second_highest_v_value
+        
+        print(f"[FINALIZE] Winner={self.winner.name} winner_bid={winner_bid_v_value:.6f} pay_per_unit={self.final_price_per_unit:.6f} quantity={self.quantity:.4f}")
         
         total_cost = self.final_price_per_unit * self.quantity
         
@@ -135,10 +142,9 @@ class ClusterAuctionState:
     all_batches_complete: bool = False
     
     def create_batch_auctions_for_turn(self, batch_number: int, all_clusters: List) -> List[BatchAuction]:
-        """
-        Create batch auctions for a specific batch number across all clusters.
+        """Create batch auctions for a specific batch number across all clusters.
         Returns list of BatchAuction objects for this batch.
-        """
+        DEBUG: prints created batch quantities so you can verify halving logic."""
         new_batches = []
         
         for cluster_enum in all_clusters:
@@ -165,6 +171,8 @@ class ClusterAuctionState:
                 base_price=self.base_price
             )
             
+            # DEBUG: show each created batch and the source cluster batch quantity
+            print(f"[CREATE_BATCH] {batch_id} cluster={cluster_info.name} batch_num={batch_number} qty={quantity:.4f}")
             self.batch_auctions[cluster_info.name] = batch
             new_batches.append(batch)
         
@@ -182,7 +190,7 @@ class TurnBasedSimulation:
     completed_batch_auctions: List[BatchAuction] = field(default_factory=list)
     active_cluster_auctions: Dict[int, ClusterAuctionState] = field(default_factory=dict)  # auction_id -> state
     turn_number: int = 0
-    max_turns: int = 100
+    max_turns: int = 10000
     next_auction_id: int = 1
     countries_currently_selling: Set[str] = field(default_factory=set)
     max_batches: int = 4  # Since all clusters now have 5 countries = 4 batches
@@ -195,26 +203,17 @@ class TurnBasedSimulation:
     
     def run(self, verbosity: str = "concise"):
         """Main simulation loop."""
-        if verbosity != "none":
-            print("="*70)
-            print("TURN-BASED CLUSTER AUCTION SIMULATION")
-            print("="*70)
-            print(f"Total Countries: {len(self.all_countries)}")
-            print(f"Max Turns: {self.max_turns}")
-            print(f"Batch Duration: 4 rounds per batch")
-            print(f"Cluster System: Proportional distribution + halving batches\n")
+        print("\n" + "="*70)
+        print("TURN-BASED CLUSTER AUCTION SIMULATION")
+        print("="*70)
+        print(f"Total Countries: {len(self.all_countries)}")
+        print(f"Max Turns: {self.max_turns}")
+        print(f"Batch Duration: 4 rounds per batch")
+        print(f"Cluster System: Proportional distribution + halving batches\n")
         
         for turn in range(1, self.max_turns + 1):
             self.turn_number = turn
-            
-            if verbosity == "verbose":
-                print(f"\n{'='*70}")
-                print(f"TURN {turn}")
-                print(f"{'='*70}")
-                print(f"Active Batch Auctions: {len(self.active_batch_auctions)}")
-                print(f"Active Cluster Auctions: {len(self.active_cluster_auctions)}")
-            elif verbosity == "concise":
-                print(f"\n=== TURN {turn} | Batch Auctions: {len(self.active_batch_auctions)} | Cluster Auctions: {len(self.active_cluster_auctions)} ===")
+            self.print_turn_header(turn)  # Use new header format
             
             # Phase 1: Each country takes their turn
             for country in self.all_countries:
@@ -306,7 +305,17 @@ class TurnBasedSimulation:
             # Check if country has ANY resources with surplus or just any resources
             available_resources = []
             for resource_name, resource in country.resources.items():
-                if resource.amount > 0:
+                # Show both supply (country's resource.amount) and demand (country.get_demand)
+                supply = resource.amount
+                demand_res = country.get_demand(resource_name)
+                demand_amt = demand_res.amount if demand_res else 0.0
+                
+                # Clear debug message to show where the decision comes from
+                print(f"[DECIDE_ACTION] {country.name} resource={resource_name} supply={supply:.2f} demand={demand_amt:.2f}")
+                
+                # Decision uses the country's supply (resource.amount) to consider auctioning.
+                # (Demand is shown for comparison but is not used as the primary gate here.)
+                if supply > 0:
                     available_resources.append(resource_name)
             
             if available_resources and random.random() < 0.3:  # 30% chance to auction
@@ -343,12 +352,19 @@ class TurnBasedSimulation:
         if not seller_resource or seller_resource.amount < total_quantity:
             return False
         
-        # Calculate proportional distribution (same as auction_manager.py)
         total_countries_in_world = sum(cluster_enum.value.country_count for cluster_enum in CountryClusters)
+        
+        # Calculate distributions then print using new format
+        self.print_auction_start(seller, resource_name, total_quantity, seller_resource.unit)
         
         for cluster_enum in CountryClusters:
             cluster_info = cluster_enum.value
             cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world)
+            self.print_cluster_allocation(
+                cluster_info,
+                cluster_info.auction_quantity or 0.0,
+                cluster_info.auction_batches or {}
+            )
         
         # Create cluster auction state
         auction_state = ClusterAuctionState(
@@ -375,16 +391,13 @@ class TurnBasedSimulation:
         """
         Place a bid on a batch auction using Laplace valuation (same as auction_manager.py).
         """
-        # Get country's supply and demand
         supply_res = country.get_resource(batch.resource_name)
         supply = supply_res.amount if supply_res else 0.0
-        
         demand_res = country.get_demand(batch.resource_name)
         if not demand_res:
             return False
         demand = demand_res.amount
         
-        # Calculate v_value using Laplace (same as auction_manager.py)
         v_value, accepted = AuctionManager.laplace(
             base_price=batch.base_price,
             supply=supply,
@@ -392,10 +405,14 @@ class TurnBasedSimulation:
             quantity=batch.quantity
         )
         
+        # Use new bid evaluation format
+        self.print_bid_evaluation(
+            country, batch, supply, demand,
+            country.budget, v_value, accepted
+        )
+        
         if not accepted:
             return False
-        
-        # Add bid to batch
         return batch.add_bid(country, v_value)
     
     def advance_all_batches(self, verbosity: str):
@@ -472,11 +489,61 @@ class TurnBasedSimulation:
         # Remove completed auctions
         for auction_id in auctions_to_remove:
             del self.active_cluster_auctions[auction_id]
+    
+    def print_turn_header(self, turn_num: int):
+        print(f"\n{'='*20} TURN {turn_num} {'='*20}")
+        print(f"Active Batch Auctions: {len(self.active_batch_auctions)}")
+        print(f"Active Cluster Auctions: {len(self.active_cluster_auctions)}\n")
+
+    def print_auction_start(self, seller: Country, resource_name: str, total_quantity: float, unit: str):
+        print("\n🔸 NEW AUCTION STARTED")
+        print(f"Seller: {seller.name}")
+        print(f"Resource: {resource_name} ({total_quantity:.4f} {unit})")
+        print("Cluster Distribution:")
+        print("-" * 50)
+
+    def print_cluster_allocation(self, cluster_info: ClusterInfo, auction_quantity: float, batches: Dict):
+        print(f"• {cluster_info.name:<30} | {auction_quantity:.4f} units")
+        if batches:
+            for batch_num, qty in batches.items():
+                print(f"  ├─ Batch {batch_num}: {qty:.4f}")
+        print("-" * 50)
+
+    def print_bid_evaluation(self, country: Country, batch: BatchAuction, supply: float, 
+                           demand: float, budget: float, v_value: float, accepted: bool):
+        print(f"\n📊 BID EVALUATION")
+        print(f"Bidder: {country.name}")
+        print(f"Batch: {batch.batch_id}")
+        print(f"Resource: {batch.resource_name} ({batch.quantity:.4f} units @ ${batch.base_price:.4f}B)")
+        print("-" * 50)
+        print(f"Supply: {supply:.4f}")
+        print(f"Demand: {demand:.4f}")
+        print(f"Budget: ${budget:.4f}B")
+        print(f"Computed Value: ${v_value:.6f}B")
+        print(f"Decision: {'✅ ACCEPTED' if accepted else '❌ REJECTED'}")
+        print("-" * 50)
+
+    def print_batch_finalization(self, batch: BatchAuction, sorted_bids: List):
+        print(f"\n🏁 BATCH FINALIZATION")
+        print(f"Batch ID: {batch.batch_id}")
+        print(f"Resource: {batch.resource_name} ({batch.quantity:.4f} {batch.resource_unit})")
+        print("-" * 50)
+        print("Bids (highest to lowest):")
+        for bidder, value in sorted_bids:
+            print(f"• {bidder.name:<20} | ${value:.6f}B per unit")
+        if batch.winner:
+            print("-" * 50)
+            print(f"Winner: {batch.winner.name}")
+            print(f"Final Price: ${batch.final_price_per_unit:.6f}B per unit")
+            print(f"Total Cost: ${(batch.final_price_per_unit * batch.quantity):.4f}B")
+        else:
+            print("\n❌ Batch failed - no valid bids")
+        print("-" * 50)
 
 
 if __name__ == "__main__":
     # Create and run simulation
-    sim = TurnBasedSimulation(max_turns=50)
+    sim = TurnBasedSimulation(max_turns=10)
     sim.run(verbosity="concise")  # Options: "none", "concise", "verbose"
     
     # Print summary statistics
