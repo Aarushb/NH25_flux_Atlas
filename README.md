@@ -9,7 +9,7 @@ NH25_Flux_Atlas is a sophisticated economic simulation platform that models reso
 - Psychologically modeled bidding behavior
 - Real-time API integration
 - Interactive bidding interface
-- Turn-based simulation mode
+- Running a python based simulation model
 
 ## Mathematical Model
 
