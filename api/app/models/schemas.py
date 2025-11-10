@@ -54,8 +54,8 @@ class ResourceResponse(BaseModel):
 class CountryResourceCreate(BaseModel):
     country_id: UUID
     resource_id: UUID
-    supply: Optional[int] = None
-    demand: Optional[int] = None
+    supply: Optional[float] = None
+    demand: Optional[float] = None
     quantity: Optional[float] = None
     unit: Optional[str] = None
     created_by: Optional[str] = None
@@ -64,8 +64,8 @@ class CountryResourceResponse(BaseModel):
     id: UUID
     country_id: UUID
     resource_id: UUID
-    supply: Optional[int]
-    demand: Optional[int]
+    supply: Optional[float]
+    demand: Optional[float]
     quantity: Optional[float]
     unit: Optional[str]
     
