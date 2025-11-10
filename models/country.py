@@ -1,8 +1,15 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional
-from .resourcess import Resource
-
-from .country_data import country_resources, country_demands
+import sys
+try:
+    from .resourcess import Resource
+    from .country_data import country_resources, country_demands
+# Fall back to direct imports for when running this file as a script
+except ImportError:
+    from resourcess import Resource
+    from country_data import country_resources, country_demands
+import requests
+import json
 
 
 
@@ -13,11 +20,13 @@ class Country:
     name: str
     ppp: int
     budget: float = 0.0
+    id: str|None=None
     resources: Dict[str, Resource] = field(default_factory=dict) #supply
     demand: Dict[str,Resource] = field(default_factory=dict) #demand
     
     def __post_init__(self):
         """After initialization, load resources for this country from country_data."""
+        self.get_country_id()
                 
         # Get resources for this country and assign them
         if self.name in country_resources:
@@ -25,10 +34,52 @@ class Country:
 
         if self.name in country_demands:
             self.demand = country_demands[self.name].copy()
+
+    def get_country_id(self, api_base_url: str = "http://localhost:8000") -> Optional[str]:
+        """
+        Fetches the country list from the API, finds this country by name,
+        and updates its self.id attribute.
+        
+        Args:
+            api_base_url (str): The base URL of the API (e.g., "https://api.yourproject.com")
+        
+        Returns:
+            Optional[str]: The country's ID if found, otherwise None.
+        """
+        # If we already have an ID, no need to fetch it again
+        if self.id:
+            return self.id
+            
+        endpoint = f"{api_base_url}/countries"
+        
+        try:
+            # 1. Make the GET request
+            response = requests.get(endpoint)
+            response.raise_for_status() # Raise an error for bad responses (4xx or 5xx)
+            
+            # 2. Loop through the list to find the match
+            countries_list = response.json()
+            for country_data in countries_list:
+                # 3. Look up by 'cname' (from your API doc) and 'self.name'
+                if country_data.get('uid') == self.name:
+                    found_id = country_data.get('cid')
+                    if found_id:
+                        # 4. Update the instance's id
+                        self.id = found_id
+                        return self.id
+            
+            # 5. Handle if not found
+            print(f"ID for '{self.name}' not found in API.", file=sys.stderr)
+            return None
+            
+        except requests.RequestException as e:
+            # 6. Handle network/request errors
+            print(f"Error fetching country ID for '{self.name}': {e}", file=sys.stderr)
+            return None
     
     def get_resource(self, resource_name: str) -> Optional[Resource]:
         """Get a specific resource by name."""
-        return self.resources.get(resource_name)
+        
     
     def has_resource(self, resource_name: str) -> bool:
         """Check if country has a specific resource."""
@@ -111,7 +162,8 @@ if __name__ == "__main__":
     print("Testing Country class with automatic resource loading:\n")
     
     # Test Russia
-    russia = Country("Russia", 47405)
+    russia = Country("russia", 47405)
+    print(russia.get_country_id())
     print(russia)
     print(f"Has PETROLEUM: {russia.has_resource('PETROLEUM')}")
     print(f"PETROLEUM amount: {russia.get_resource('PETROLEUM')}")

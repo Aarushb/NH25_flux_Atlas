@@ -1,4 +1,9 @@
-from .resourcess import Resource
+try:
+    from .resourcess import Resource
+# Fall back to direct imports for when running this file as a script
+except ImportError:
+    # This block runs when `country.py` is executed as a script
+    from resourcess import Resource
 
 country_resources: dict[str, dict[str, Resource]] = {
     "Russia": {
