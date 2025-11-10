@@ -24,62 +24,100 @@ class Country:
     resources: Dict[str, Resource] = field(default_factory=dict) #supply
     demand: Dict[str,Resource] = field(default_factory=dict) #demand
     
-    def __post_init__(self):
-        """After initialization, load resources for this country from country_data."""
-        self.get_country_id()
-                
-        # Get resources for this country and assign them
-        if self.name in country_resources:
-            self.resources = country_resources[self.name].copy()
-
-        if self.name in country_demands:
-            self.demand = country_demands[self.name].copy()
-
-    def get_country_id(self, api_base_url: str = "http://localhost:8000") -> Optional[str]:
-        """
-        Fetches the country list from the API, finds this country by name,
-        and updates its self.id attribute.
-        
-        Args:
-            api_base_url (str): The base URL of the API (e.g., "https://api.yourproject.com")
-        
-        Returns:
-            Optional[str]: The country's ID if found, otherwise None.
-        """
-        # If we already have an ID, no need to fetch it again
-        if self.id:
-            return self.id
-            
-        endpoint = f"{api_base_url}/countries"
-        
-        try:
-            # 1. Make the GET request
-            response = requests.get(endpoint)
-            response.raise_for_status() # Raise an error for bad responses (4xx or 5xx)
-            
-            # 2. Loop through the list to find the match
-            countries_list = response.json()
-            for country_data in countries_list:
-                # 3. Look up by 'cname' (from your API doc) and 'self.name'
-                if country_data.get('uid') == self.name:
-                    found_id = country_data.get('cid')
-                    if found_id:
-                        # 4. Update the instance's id
-                        self.id = found_id
-                        return self.id
-            
-            # 5. Handle if not found
-            print(f"ID for '{self.name}' not found in API.", file=sys.stderr)
-            return None
-            
-        except requests.RequestException as e:
-            # 6. Handle network/request errors
-            print(f"Error fetching country ID for '{self.name}': {e}", file=sys.stderr)
-            return None
+def __post_init__(self):
+    """After initialization, load resources and budget from API."""
+    # Get country ID from API
+    self.get_country_id()
     
-    def get_resource(self, resource_name: str) -> Optional[Resource]:
-        """Get a specific resource by name."""
+    # Load resources and demands from API instead of hardcoded data
+    if self.id:
+        self._load_resources_from_api()
+        self._load_budget_from_api()
+    else:
+        print(f"Warning: Could not load data for {self.name} - ID not found")
+def get_country_id(self, api_base_url: str = "http://localhost:8000") -> Optional[str]:
+    """Fetch country ID from API by matching country name."""
+    if self.id:
+        return self.id
         
+    endpoint = f"{api_base_url}/countries"
+    
+    try:
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        
+        countries_list = response.json()
+        for country_data in countries_list:
+            # Match by 'cname' field
+            if country_data.get('cname', '').lower() == self.name.lower():
+                found_id = country_data.get('id')
+                if found_id:
+                    self.id = found_id
+                    return self.id
+        
+        print(f"Country '{self.name}' not found in API.", file=sys.stderr)
+        return None
+        
+    except requests.RequestException as e:
+        print(f"Error fetching country ID for '{self.name}': {e}", file=sys.stderr)
+        return None
+def _load_budget_from_api(self, api_base_url: str = "http://localhost:8000") -> None:
+    """Load country budget from API using carbon_budget field."""
+    try:
+        response = requests.get(f"{api_base_url}/countries/{self.id}")
+        response.raise_for_status()
+        
+        country_data = response.json()
+        # Use carbon_budget from API as the country's budget
+        self.budget = country_data.get('carbon_budget', 0.0) or 0.0
+        
+    except requests.RequestException as e:
+        print(f"Error loading budget for {self.name}: {e}", file=sys.stderr)
+        self.budget = 0.0
+
+def _load_resources_from_api(self, api_base_url: str = "http://localhost:8000") -> None:
+    """Load country resources (supply and demand) from API."""
+    try:
+        response = requests.get(f"{api_base_url}/countries/{self.id}/resources")
+        response.raise_for_status()
+        
+        country_resources_list = response.json()
+        
+        for cr in country_resources_list:
+            resource_id = cr.get('resource_id')
+            supply = cr.get('supply', 0)
+            demand = cr.get('demand', 0)
+            quantity = cr.get('quantity', 0.0)
+            unit = cr.get('unit', 'units')
+            
+            # Get resource name from resource_id
+            resource_name = self._get_resource_name(resource_id, api_base_url)
+            if not resource_name:
+                continue
+            
+            # Add to supply resources if supply > 0
+            if supply and supply > 0:
+                self.resources[resource_name] = Resource(float(quantity), unit)
+            
+            # Add to demand resources if demand > 0
+            if demand and demand > 0:
+                self.demand[resource_name] = Resource(float(demand), unit)
+                
+    except requests.RequestException as e:
+        print(f"Error loading resources for {self.name}: {e}", file=sys.stderr)
+
+def _get_resource_name(self, resource_id: str, api_base_url: str = "http://localhost:8000") -> Optional[str]:
+    """Get resource name from resource ID."""
+    try:
+        response = requests.get(f"{api_base_url}/resources/{resource_id}")
+        response.raise_for_status()
+        resource_data = response.json()
+        return resource_data.get('rname')
+    except requests.RequestException:
+        return None
+def get_resource(self, resource_name: str) -> Optional[Resource]:
+    """Get a specific resource by name."""
+    return self.resources.get(resource_name)        
     
     def has_resource(self, resource_name: str) -> bool:
         """Check if country has a specific resource."""
