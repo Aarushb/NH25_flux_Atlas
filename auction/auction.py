@@ -1,3 +1,5 @@
+import requests
+from uuid import UUID
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -67,7 +69,56 @@ class Auction:
     bids: List[Bid] = field(default_factory=list)
     winner: Optional[Country] = None
     final_price_per_unit: Optional[float] = None
+    @classmethod
+def from_country_name(cls, 
+                     seller_name: str,
+                     resource_name: str,
+                     quantity: float,
+                     asking_price_per_unit: float,
+                     current_market_price: float,
+                     api_base_url: str = "http://localhost:8000") -> 'Auction':
+    """
+    Create an Auction by fetching seller Country from API.
     
+    Args:
+        seller_name: Name of the selling country
+        resource_name: Name of the resource being sold
+        quantity: Amount to sell
+        asking_price_per_unit: Seller's asking price per unit
+        current_market_price: Current market price per unit
+        api_base_url: Base URL of the API
+    
+    Returns:
+        Auction instance with seller data from API
+    """
+    from models.country import Country
+    
+    # Create seller Country object (will auto-fetch from API)
+    seller = Country(name=seller_name, ppp=0)  # PPP will be loaded from API
+    
+    # Get resource unit from API
+    try:
+        resources_response = requests.get(f"{api_base_url}/resources")
+        resources_response.raise_for_status()
+        resources = resources_response.json()
+        
+        resource_unit = "units"  # default
+        for res in resources:
+            if res.get('rname') == resource_name:
+                resource_unit = res.get('description', 'units')
+                break
+                
+    except requests.RequestException:
+        resource_unit = "units"
+    
+    return cls(
+        seller=seller,
+        resource_name=resource_name,
+        quantity=quantity,
+        resource_unit=resource_unit,
+        asking_price_per_unit=asking_price_per_unit,
+        current_market_price=current_market_price
+    )
     @property
     def total_asking_price(self) -> float:
         """Total price seller is asking for."""
