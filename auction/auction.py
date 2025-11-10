@@ -69,56 +69,57 @@ class Auction:
     bids: List[Bid] = field(default_factory=list)
     winner: Optional[Country] = None
     final_price_per_unit: Optional[float] = None
+    
     @classmethod
-def from_country_name(cls, 
-                     seller_name: str,
-                     resource_name: str,
-                     quantity: float,
-                     asking_price_per_unit: float,
-                     current_market_price: float,
-                     api_base_url: str = "http://localhost:8000") -> 'Auction':
-    """
-    Create an Auction by fetching seller Country from API.
-    
-    Args:
-        seller_name: Name of the selling country
-        resource_name: Name of the resource being sold
-        quantity: Amount to sell
-        asking_price_per_unit: Seller's asking price per unit
-        current_market_price: Current market price per unit
-        api_base_url: Base URL of the API
-    
-    Returns:
-        Auction instance with seller data from API
-    """
-    from models.country import Country
-    
-    # Create seller Country object (will auto-fetch from API)
-    seller = Country(name=seller_name, ppp=0)  # PPP will be loaded from API
-    
-    # Get resource unit from API
-    try:
-        resources_response = requests.get(f"{api_base_url}/resources")
-        resources_response.raise_for_status()
-        resources = resources_response.json()
+    def from_country_name(cls,
+                          seller_name: str,
+                          resource_name: str,
+                          quantity: float,
+                          asking_price_per_unit: float,
+                          current_market_price: float,
+                          api_base_url: str = "http://localhost:8000") -> 'Auction':
+        """
+        Create an Auction by fetching seller Country from API.
         
-        resource_unit = "units"  # default
-        for res in resources:
-            if res.get('rname') == resource_name:
-                resource_unit = res.get('description', 'units')
-                break
-                
-    except requests.RequestException:
-        resource_unit = "units"
+            Args:
+                seller_name: Name of the selling country
+                resource_name: Name of the resource being sold
+                quantity: Amount to sell
+                asking_price_per_unit: Seller's asking price per unit
+                current_market_price: Current market price per unit
+                api_base_url: Base URL of the API
+            
+            Returns:
+                Auction instance with seller data from API
+        """
+        from models.country import Country
+        
+        # Create seller Country object (will auto-fetch from API)
+        seller = Country(name=seller_name, ppp=0)  # PPP will be loaded from API
+        
+        # Get resource unit from API
+        try:
+            resources_response = requests.get(f"{api_base_url}/resources")
+            resources_response.raise_for_status()
+            resources = resources_response.json()
+            
+            resource_unit = "units"  # default
+            for res in resources:
+                if res.get('rname') == resource_name:
+                    resource_unit = res.get('description', 'units')
+                    break
+        except requests.RequestException:
+            resource_unit = "units"
+        
+        return cls(
+            seller=seller,
+            resource_name=resource_name,
+            quantity=quantity,
+            resource_unit=resource_unit,
+            asking_price_per_unit=asking_price_per_unit,
+            current_market_price=current_market_price
+        )
     
-    return cls(
-        seller=seller,
-        resource_name=resource_name,
-        quantity=quantity,
-        resource_unit=resource_unit,
-        asking_price_per_unit=asking_price_per_unit,
-        current_market_price=current_market_price
-    )
     @property
     def total_asking_price(self) -> float:
         """Total price seller is asking for."""
@@ -145,17 +146,17 @@ def from_country_name(cls,
         seller_resource = self.seller.get_resource(self.resource_name)
         if seller_resource.amount < self.quantity:
             print(f" {self.seller.name} doesn't have enough {self.resource_name}")
-            print(f"   Has: {seller_resource.amount} {self.resource_unit}, Needs: {self.quantity} {self.resource_unit}")
+            print(f"    Has: {seller_resource.amount} {self.resource_unit}, Needs: {self.quantity} {self.resource_unit}")
             return False
         
         self.status = AuctionStatus.BIDDING_OPEN
         print(f"\n Auction is now OPEN")
-        print(f"   Seller: {self.seller.name}")
-        print(f"   Resource: {self.quantity} {self.resource_unit} of {self.resource_name}")
-        print(f"   Current Market Price: ${self.current_market_price:.2f} per {self.resource_unit}")
-        print(f"   Seller's Asking Price: ${self.asking_price_per_unit:.2f} per {self.resource_unit}")
-        print(f"   Total Market Value: ${self.total_market_value:.2f}B")
-        print(f"   Total Asking Price: ${self.total_asking_price:.2f}B")
+        print(f"    Seller: {self.seller.name}")
+        print(f"    Resource: {self.quantity} {self.resource_unit} of {self.resource_name}")
+        print(f"    Current Market Price: ${self.current_market_price:.2f} per {self.resource_unit}")
+        print(f"    Seller's Asking Price: ${self.asking_price_per_unit:.2f} per {self.resource_unit}")
+        print(f"    Total Market Value: ${self.total_market_value:.2f}B")
+        print(f"    Total Asking Price: ${self.total_asking_price:.2f}B")
         return True
     
     def submit_bid(self, country: Country, bid_price_per_unit: float) -> bool:
@@ -174,7 +175,7 @@ def from_country_name(cls,
         # Check if country has enough budget
         if country.budget < total_bid:
             print(f" {country.name} doesn't have enough budget")
-            print(f"   Has: ${country.budget:.2f}B, Needs: ${total_bid:.2f}B")
+            print(f"    Has: ${country.budget:.2f}B, Needs: ${total_bid:.2f}B")
             return False
         
         # Check if bid meets asking price
@@ -256,13 +257,13 @@ def from_country_name(cls,
         self.status = AuctionStatus.COMPLETED
         
         print(f"\n Winner: {winner.name}")
-        print(f"   Final Price: ${final_price_per_unit:.2f} per {self.resource_unit}")
-        print(f"   Total Payment: ${total_price:.2f}B")
-        print(f"   Resource Transferred: {self.quantity} {self.resource_unit} of {self.resource_name}")
-        print(f"   {winner.name} budget: ${winner.budget:.2f}B")
-        print(f"   {self.seller.name} budget: ${self.seller.budget:.2f}B")
+        print(f"    Final Price: ${final_price_per_unit:.2f} per {self.resource_unit}")
+        print(f"    Total Payment: ${total_price:.2f}B")
+        print(f"    Resource Transferred: {self.quantity} {self.resource_unit} of {self.resource_name}")
+        print(f"    {winner.name} budget: ${winner.budget:.2f}B")
+        print(f"    {self.seller.name} budget: ${self.seller.budget:.2f}B")
         
         return True
     
     def __repr__(self) -> str:
-        return f"Auction({self.resource_name}, seller={self.seller.name}, quantity={self.quantity}, status={self.status.value})"   
+        return f"Auction({self.resource_name}, seller={self.seller.name}, quantity={self.quantity}, status={self.status.value})"
