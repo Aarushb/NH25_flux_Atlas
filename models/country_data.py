@@ -7,7 +7,7 @@ except ImportError:
 
 country_resources: dict[str, dict[str, Resource]] = {
     "Russia": {
-        "PETROLEUM": Resource(80.0, "billion barrels"),
+        "PETROLEUM": Resource(200.0, "billion barrels"),
         "NATURAL_GAS": Resource(47.8, "trillion cubic meters"),
         "COAL": Resource(160.0, "billion tonnes"),
         "URANIUM": Resource(0.61, "million tonnes"),
@@ -68,7 +68,7 @@ country_resources: dict[str, dict[str, Resource]] = {
         "GOLD": Resource(0.3, "thousand tonnes"),
     },
     "United States": {
-        "PETROLEUM": Resource(35.0, "billion barrels"),
+        "PETROLEUM": Resource(150.0, "billion barrels"),
         "NATURAL_GAS": Resource(12.0, "trillion cubic meters"),
         "COBALT": Resource(0.01, "million tonnes"),
         "LITHIUM": Resource(0.98, "million tonnes"),

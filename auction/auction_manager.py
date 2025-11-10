@@ -4,16 +4,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 import math
-
+import csv
 # --- Models & Data ---
+import random
 from models.country import Country
 from models.cluster import ClusterInfo  
 from models.cluster_enums import CountryClusters
 from models.resourcess import Resource
-
+from datetime import datetime
 # --- Auction Primitives (Not used in this sim) ---
 from auction import AuctionStatus, Bid, Auction 
-
+import io
+import time
 
 @dataclass
 class AuctionManager:
@@ -26,7 +28,7 @@ class AuctionManager:
     auctions: List[Auction] = field(default_factory=list)
     
     @staticmethod
-    def laplace(base_price: float, supply: float, demand: float, quantity:float, min_b:int=1 , min_w:int=0.0001, k:int=0.3):
+    def laplace(base_price: float, supply: float, demand: float, quantity:float, min_b:int=1 , min_w:int=0.0001, k:int=0.4):
         """
         Calculates a country's max acceptable bid (v_value) for a given quantity.
         This is the "AI brain" for competitor bidders.
@@ -520,6 +522,23 @@ def run_bidding_simulation(
     
     print("="*70)
 
+# --- HELPER FUNCTION FOR LOGGING ---
+
+def get_country_state(country: Country, resource_name: str) -> Dict:
+    """Helper to capture the full state of a country for logging."""
+    supply_res = country.get_resource(resource_name)
+    demand_res = country.get_demand(resource_name)
+    return {
+        "name": country.name,
+        "budget": country.budget,
+        "supply": supply_res.amount if supply_res else 0.0,
+        "demand": demand_res.amount if demand_res else 0.0
+    }
+
+# -----------------------------------------------------------------
+# --- [NEW] FUNCTION TO RUN THE FOREVER LOOP ---
+# -----------------------------------------------------------------
+
 def random_auction_loop_with_logging(
     logged_in_country_name: str = "Japan", 
     base_price: float = 0.5,
@@ -534,10 +553,6 @@ def random_auction_loop_with_logging(
         base_price: Base price for all auctions (default: 0.5B per unit)
         log_file: Path to the CSV log file (default: "auction_simulation_log.csv")
     """
-    import random
-    import time
-    import csv
-    from datetime import datetime
     
     # Collect all countries from all clusters
     all_countries = []
@@ -553,39 +568,27 @@ def random_auction_loop_with_logging(
     print(f"Logging to: {log_file}")
     print("\nStarting infinite auction loop... (Press Ctrl+C to stop)\n")
     
-    # Create CSV file with headers
+    # --- [FIXED] CSV headers for detailed logging ---
     csv_headers = [
-        'auction_id',
-        'timestamp',
-        'seller_country',
-        'seller_cluster',
-        'resource_name',
-        'resource_unit',
-        'total_quantity_auctioned',
-        'sell_percentage',
-        'base_price_per_unit',
-        'seller_initial_budget',
-        'seller_final_budget',
-        'seller_profit',
-        'seller_initial_resource',
-        'seller_final_resource',
-        'resource_sold',
-        'total_batches_created',
-        'successful_batches',
-        'failed_batches',
-        'total_revenue',
-        'unique_buyers_count',
-        'buyers_list',
-        'winning_prices_summary'
+        "auction_id", "timestamp", "cluster_name", "batch_num", "quantity_sold", "resource_name",
+        "seller_name", "winner_name", "winning_price_per_unit", "total_cost",
+        "seller_budget_before", "seller_budget_after",
+        "seller_supply_before", "seller_supply_after",
+        "winner_budget_before", "winner_budget_after",
+        "winner_supply_before", "winner_supply_after",
+        "winner_demand_before", "winner_demand_after"
     ]
     
     # Initialize CSV file
-    with open(log_file, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=csv_headers)
-        writer.writeheader()
-    
-    print(f"✓ CSV file created: {log_file}\n")
-    
+    try:
+        with open(log_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=csv_headers)
+            writer.writeheader()
+        print(f"✓ CSV file created: {log_file}\n")
+    except IOError as e:
+        print(f"[ERROR] Could not create CSV file: {e}. Exiting.")
+        return
+
     auction_count = 0
     
     try:
@@ -600,120 +603,80 @@ def random_auction_loop_with_logging(
                 continue
             
             # Get resources this country owns (has supply)
-            available_resources = []
-            for resource_name, resource in random_country.resources.items():
-                if resource.amount > 0:
-                    available_resources.append((resource_name, resource))
+            # Use helper from country.py
+            exportable_resources = random_country.get_export_resources()
             
-            # Skip if country has no resources
-            if not available_resources:
+            if not exportable_resources:
                 continue
             
             # Pick a random resource from what they own
-            random_resource_name, random_resource = random.choice(available_resources)
+            random_resource_name = random.choice(exportable_resources)
+            random_resource = random_country.get_resource(random_resource_name)
+            print(random_resource)
             
             # Sell 5-8% of the resource
-            sell_percentage = random.uniform(0.05, 0.08)
+            sell_percentage = random.uniform(0.09, 0.11)
             sell_quantity = random_resource.amount * sell_percentage
             
             # Skip if quantity too small
             if sell_quantity < 0.01:
                 continue
             
-            # Find seller's cluster
-            seller_cluster_name = "Unknown"
-            for cluster_enum in CountryClusters:
-                if random_country in cluster_enum.value.countries:
-                    seller_cluster_name = cluster_enum.value.name
-                    break
-            
-            # Store initial state
-            initial_budget = random_country.budget
-            initial_resource_amount = random_resource.amount
-            
             # Print minimal info to terminal
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Auction #{auction_count}: {random_country.name} selling {sell_quantity:.2f} {random_resource.unit} of {random_resource_name}")
             
-            # Capture auction data by running simulation
-            # We need to track the auction results
-            auction_data = run_auction_and_capture_data(
+            # --- [FIXED] Capture detailed transaction data ---
+            # This function now returns a list of all successful transaction rows
+            transaction_rows = run_auction_and_capture_data(
+                auction_id=auction_count,
                 seller=random_country,
                 resource_name=random_resource_name,
                 total_quantity=sell_quantity,
                 base_price=base_price
             )
             
-            # Get final state
-            final_budget = random_country.budget
-            final_resource = random_country.get_resource(random_resource_name)
-            final_resource_amount = final_resource.amount if final_resource else 0.0
-            
-            # Calculate metrics
-            profit = final_budget - initial_budget
-            resource_sold = initial_resource_amount - final_resource_amount
-            
-            # Prepare CSV row
-            csv_row = {
-                'auction_id': auction_count,
-                'timestamp': datetime.now().isoformat(),
-                'seller_country': random_country.name,
-                'seller_cluster': seller_cluster_name,
-                'resource_name': random_resource_name,
-                'resource_unit': random_resource.unit,
-                'total_quantity_auctioned': f"{sell_quantity:.4f}",
-                'sell_percentage': f"{sell_percentage*100:.2f}%",
-                'base_price_per_unit': f"{base_price:.4f}",
-                'seller_initial_budget': f"{initial_budget:.2f}",
-                'seller_final_budget': f"{final_budget:.2f}",
-                'seller_profit': f"{profit:.2f}",
-                'seller_initial_resource': f"{initial_resource_amount:.4f}",
-                'seller_final_resource': f"{final_resource_amount:.4f}",
-                'resource_sold': f"{resource_sold:.4f}",
-                'total_batches_created': auction_data['total_batches'],
-                'successful_batches': auction_data['successful_batches'],
-                'failed_batches': auction_data['failed_batches'],
-                'total_revenue': f"{profit:.2f}",
-                'unique_buyers_count': len(auction_data['buyers']),
-                'buyers_list': '; '.join(auction_data['buyers']),
-                'winning_prices_summary': auction_data['prices_summary']
-            }
-            
-            # Write to CSV
-            with open(log_file, 'a', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=csv_headers)
-                writer.writerow(csv_row)
-            
-            print(f"  → Profit: ${profit:.2f}B | Buyers: {len(auction_data['buyers'])} | Logged to CSV\n")
-            
-            time.sleep(1)  # Reduced pause for faster simulation
+            # Write all successful transactions to the CSV
+            if transaction_rows:
+                try:
+                    with open(log_file, 'a', newline='', encoding='utf-8') as f:
+                        writer = csv.DictWriter(f, fieldnames=csv_headers)
+                        writer.writerows(transaction_rows)
+                    
+                    total_profit = sum(row['total_cost'] for row in transaction_rows)
+                    print(f"  → Profit: ${total_profit:.2f}B | Transactions: {len(transaction_rows)} | Logged to CSV\n")
+                except IOError as e:
+                    print(f"  → [ERROR] Could not write to CSV: {e}\n")
+
+            time.sleep(1)  # Pause for 1 second between auctions
             
     except KeyboardInterrupt:
         print("\n\n" + "="*70)
         print("SIMULATION STOPPED BY USER")
         print("="*70)
-        print(f"Total auctions completed: {auction_count}")
+        print(f"Total auctions created: {auction_count}")
         print(f"Log saved to: {log_file}")
 
+# --- [MODIFIED] CAPTURE FUNCTION ---
 
-def run_auction_and_capture_data(seller: Country, resource_name: str, total_quantity: float, base_price: float) -> dict:
+def run_auction_and_capture_data(auction_id: int, seller: Country, resource_name: str, total_quantity: float, base_price: float) -> List[Dict]:
     """
-    Runs the auction simulation and captures key data WITHOUT printing.
-    Returns a dictionary with auction results.
+    Runs the auction simulation and captures detailed "before/after" data
+    for every successful transaction. Suppresses console output.
+    Returns a list of dictionaries, ready for the CSV writer.
     """
+    
     # Store original stdout to suppress prints
-    import sys
-    import io
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    
+    # --- [NEW] List to hold CSV row data ---
+    transaction_log_rows = []
     
     seller_resource = seller.get_resource(resource_name)
     
     if not seller_resource or seller_resource.amount < total_quantity:
-        return {
-            'total_batches': 0,
-            'successful_batches': 0,
-            'failed_batches': 0,
-            'buyers': [],
-            'prices_summary': 'FAILED: Insufficient resources'
-        }
+        sys.stdout = old_stdout # Restore stdout
+        return [] # Return empty list
     
     resource_unit = seller_resource.unit
     
@@ -722,20 +685,11 @@ def run_auction_and_capture_data(seller: Country, resource_name: str, total_quan
     
     for cluster_enum in CountryClusters:
         cluster_info = cluster_enum.value
-        cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world, seller)
-    
-    # Track auction results
-    total_batches = 0
-    successful_batches = 0
-    failed_batches = 0
-    buyers = set()
-    prices = []
+        # Use n-1 logic from cluster.py
+        cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world, seller=seller)
     
     live_auction_stock = total_quantity
-    
-    # Suppress output during auction
-    old_stdout = sys.stdout
-    sys.stdout = io.StringIO()
+    epsilon = 1e-9
     
     try:
         for cluster_enum in CountryClusters:
@@ -748,13 +702,10 @@ def run_auction_and_capture_data(seller: Country, resource_name: str, total_quan
             for batch_num in sorted_batch_nums:
                 quantity = cluster_info.get_batch_quantity(batch_num)
                 
-                if quantity == 0:
+                if quantity is None or quantity == 0:
                     continue
-                
-                total_batches += 1
-                
-                if live_auction_stock < quantity:
-                    failed_batches += 1
+                                
+                if live_auction_stock < (quantity - epsilon):
                     break
                 
                 bids = []
@@ -770,6 +721,7 @@ def run_auction_and_capture_data(seller: Country, resource_name: str, total_quan
                     supply = supply_res.amount if supply_res else 0.0
                     demand = demand_res.amount
                     
+                    # Use helper from this file
                     v_value, accepted = AuctionManager.laplace(
                         base_price=base_price,
                         supply=supply,
@@ -777,11 +729,14 @@ def run_auction_and_capture_data(seller: Country, resource_name: str, total_quan
                         quantity=quantity
                     )
                     
+                    # Add randomization noise (±3%) ONLY in the loop to create bid variance
+                    noise = random.uniform(0.97, 1.03)
+                    v_value = v_value * noise
+                    
                     if accepted:
                         bids.append((v_value, country))
                 
                 if not bids:
-                    failed_batches += 1
                     continue
                 
                 bids.sort(key=lambda x: x[0], reverse=True)
@@ -791,10 +746,13 @@ def run_auction_and_capture_data(seller: Country, resource_name: str, total_quan
                 total_cost = price_per_unit * quantity
                 
                 if winner.budget < total_cost:
-                    failed_batches += 1
                     continue
                 
-                # Transaction
+                # --- [NEW] CAPTURE DATA ---
+                seller_state_before = get_country_state(seller, resource_name)
+                winner_state_before = get_country_state(winner, resource_name)
+
+                # --- Transaction ---
                 winner.budget -= total_cost
                 seller.budget += total_cost
                 
@@ -807,23 +765,53 @@ def run_auction_and_capture_data(seller: Country, resource_name: str, total_quan
                 else:
                     winner.resources[resource_name] = Resource(amount=quantity, unit=resource_unit)
                 
-                successful_batches += 1
-                buyers.add(winner.name)
-                prices.append(f"${price_per_unit:.4f}")
+                # Update demand
+                winner_demand = winner.get_demand(resource_name)
+                if winner_demand:
+                    winner_demand.amount *= 0.5
+                
+                seller_state_after = get_country_state(seller, resource_name)
+                winner_state_after = get_country_state(winner, resource_name)
+
+                # --- [NEW] Create the CSV row dictionary ---
+                csv_row = {
+                    "auction_id": auction_id,
+                    "timestamp": datetime.now().isoformat(),
+                    "cluster_name": cluster_info.name,
+                    "batch_num": batch_num,
+                    "quantity_sold": quantity,
+                    "resource_name": resource_name,
+                    "seller_name": seller.name,
+                    "winner_name": winner.name,
+                    "winning_price_per_unit": price_per_unit,
+                    "total_cost": total_cost,
+                    "seller_budget_before": seller_state_before['budget'],
+                    "seller_budget_after": seller_state_after['budget'],
+                    "seller_supply_before": seller_state_before['supply'],
+                    "seller_supply_after": seller_state_after['supply'],
+                    "winner_budget_before": winner_state_before['budget'],
+                    "winner_budget_after": winner_state_after['budget'],
+                    "winner_supply_before": winner_state_before['supply'],
+                    "winner_supply_after": winner_state_after['supply'],
+                    "winner_demand_before": winner_state_before['demand'],
+                    "winner_demand_after": winner_state_after['demand']
+                }
+                transaction_log_rows.append(csv_row)
+                
+                if live_auction_stock < epsilon:
+                    break
+            
+            if live_auction_stock < epsilon:
+                break
     
     finally:
         # Restore stdout
         sys.stdout = old_stdout
     
-    return {
-        'total_batches': total_batches,
-        'successful_batches': successful_batches,
-        'failed_batches': failed_batches,
-        'buyers': list(buyers),
-        'prices_summary': ', '.join(prices) if prices else 'No sales'
-    }
+    # Return the list of all successful transactions
+    return transaction_log_rows
 
 
 if __name__ == '__main__':
+    # This just calls the one loop function, as requested
     random_auction_loop_with_logging()
-
