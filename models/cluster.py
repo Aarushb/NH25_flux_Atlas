@@ -1,3 +1,4 @@
+import requests
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from .country import Country
@@ -17,7 +18,56 @@ class ClusterInfo:
     def __post_init__(self):
         """After initialization, calculate and assign budgets to all countries."""
         self.assign_country_budgets()
+@classmethod
+def from_group_id(cls, group_id: str, api_base_url: str = "http://localhost:8000") -> 'ClusterInfo':
+    """
+    Create ClusterInfo from a group ID by fetching data from API.
     
+    Args:
+        group_id: UUID of the group
+        api_base_url: Base URL of the API
+    
+    Returns:
+        ClusterInfo instance with data from API
+    """
+    try:
+        # Get group details
+        group_response = requests.get(f"{api_base_url}/groups/{group_id}")
+        group_response.raise_for_status()
+        group_data = group_response.json()
+        
+        # Get all countries in this group
+        all_countries_response = requests.get(f"{api_base_url}/countries")
+        all_countries_response.raise_for_status()
+        all_countries = all_countries_response.json()
+        
+        # Filter countries by group_id
+        group_countries = [c for c in all_countries if c.get('group_id') == group_id]
+        
+        # Create Country objects
+        from .country import Country
+        country_objects = []
+        for c_data in group_countries:
+            country = Country(
+                name=c_data['cname'],
+                ppp=c_data.get('ppp', 0),
+                budget=c_data.get('carbon_budget', 0.0) or 0.0,
+                id=c_data['id']
+            )
+            country_objects.append(country)
+        
+        # Create ClusterInfo
+        return cls(
+            name=group_data['name'],
+            countries=country_objects,
+            min_ppp=group_data.get('low_ppp', 0),
+            max_ppp=group_data.get('high_ppp', 0),
+            budget=0.0  # Will be calculated
+        )
+        
+    except requests.RequestException as e:
+        print(f"Error creating cluster from group {group_id}: {e}", file=sys.stderr)
+        return None
     @property
     def avg_ppp(self) -> float:
         """Calculate average PPP from countries in cluster."""
