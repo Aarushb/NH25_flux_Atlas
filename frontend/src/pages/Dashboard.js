@@ -7,9 +7,10 @@ import Chart from "react-apexcharts"
 import Carbon from "../images/carbon.jpg"
 import Trades from "../images/trades.png"
 import Fairness from "../images/fairness.png"
+import {useState, useEffect} from "react";
 import {ComposableMap,Geographies,Geography} from "react-simple-maps";
 import Marquee from "react-fast-marquee";
-import {useEffect, useState} from "react";
+import Navbar from '../components/Navbar'
 
 
 
@@ -241,10 +242,32 @@ const SimulationPanel = () => {
 }
 
 const NUSTrend = () => {
+
+    const [nusHistory, setNusHistory] = useState([])
+
+    async function fetchData () {
+        const res = await fetch("http://localhost:3000/nus")
+        const json = await res.json()
+
+
+        setNusHistory(prev => [...prev, { time: Date.now(), ...json }])
+
+    }
+
+    useEffect(() => {
+
+        fetchData()
+
+        const interval = setInterval(fetchData, 2000)
+
+        return () => clearInterval(interval)
+    }, [])
+
+    const labels = nusHistory.map(item => item.time)
     const series = [
         {
             name: "NUS Score",
-            data: [78, 82, 91, 87, 94, 92, 98],
+            data: nusHistory.map(item=>item.nus),
         },
     ];
 
@@ -265,7 +288,7 @@ const NUSTrend = () => {
             type: "gradient",
         },
         xaxis: {
-            categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            categories: labels,
         },
         dataLabels: { enabled: false },
         tooltip: { theme: "dark" },
@@ -331,10 +354,30 @@ const GlobalMap = () => {
 }
 
 const MarketIndexChart = () => {
+
+    const [marketHistory, setMarketHistory] = useState([])
+
+    async function fetchData(){
+        const res = await fetch("https://localhost:3000/market")
+        const json = await res.json()
+
+        setMarketHistory(prev =>  [...prev, { time:Date.now() , ...json}] )
+    }
+
+
+    useEffect(() => {
+        fetchData()
+
+        setInterval( () => {
+            fetchData()
+        }, 2000)
+    }, [])
+
+    const labels = marketHistory.map(his => his.time.toLocaleString())
     const series = [
         {
-            name: "NUS Score",
-            data: [78, 82, 91, 87, 94, 92, 98],
+            name: "Market Index",
+            data: marketHistory.map(his => his.index),
         },
     ];
 
@@ -355,7 +398,7 @@ const MarketIndexChart = () => {
             type: "gradient",
         },
         xaxis: {
-            categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            categories: labels,
         },
         dataLabels: { enabled: false },
         tooltip: { theme: "dark" },
@@ -374,8 +417,11 @@ function Dashboard() {
   return (
 
       <>
+        <div className="the-top">
 
-          <h1>FluxAtlas Eco-tech Market</h1>
+            <h1>FluxAtlas Eco-tech Market</h1>
+        </div>
+
 
    <div className="dashboard">
 

@@ -95,6 +95,7 @@ img{
 h1{
   color: teal;
   text-align: center;
+  width: 600px;
 }
 
 h2{
@@ -208,4 +209,86 @@ th, td{
   padding: 8px 12px;
   text-align: left;
   white-space: nowrap;
+}
+
+.the-top{
+  display: flex;
+}
+
+/* Navigation.css */
+
+.navbar {
+  background-color: #333;
+  padding: 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem; /* Space between the two buttons */
+}
+
+/* Base styles for the dropdown button */
+.nav-button {
+  background-color: #4a4a4a;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.nav-button:hover {
+  background-color: #5a5a5a;
+}
+
+.nav-button .arrow {
+  margin-left: 0.5rem;
+  font-size: 0.8em;
+}
+
+/* This container holds the button and the menu */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* The dropdown menu itself */
+.dropdown-menu {
+  position: absolute;
+  top: 100%; /* Positioned right below the button */
+  left: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  z-index: 1000;
+  padding: 0.5rem 0;
+  margin-top: 0.25rem; /* Small space between button and menu */
+
+  /* Items are stacked vertically */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Styles for the items inside the menu */
+.dropdown-item {
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  color: #333;
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.dropdown-item:hover {
+  background-color: #f4f4f4;
 }
