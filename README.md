@@ -54,10 +54,10 @@ This mechanism is chosen because:
 - Prevents winner's curse and aggressive overbidding
 
 Mathematically:
-$$ p_{final} = \begin{cases} 
+$$p_{final} = \begin{cases} 
 v_{2nd\text{-}highest} & \text{if multiple bids} \\
 base_{price} & \text{if single bidder}
-\end{cases} $$
+\end{cases}$$
 
 Where $p_{final}$ is the final price per unit that the winning country pays.
 
@@ -105,12 +105,12 @@ Countries decide to sell based on several factors:
 The bidding strategy incorporates demand-matching and quantity optimization:
 
 1. **Demand Alignment**:
-   $$ bid\_urgency = \frac{|quantity - demand|}{demand} $$
+   $$bid\_urgency = \frac{|quantity - demand|}{demand}$$
    - Lower difference → Higher bid probability
    - Perfect quantity match maximizes bid value
 
 2. **Supply-Demand Ratio Impact**:
-   $$ bid\_modifier = \frac{demand}{available\_supply} $$
+   $$bid\_modifier = \frac{demand}{available\_supply}$$
    - High demand/low supply → Aggressive bidding
    - Low demand/high supply → Conservative bidding
 
@@ -229,13 +229,7 @@ Please read CONTRIBUTING.md for details on our code of conduct and the process f
 See the LICENSE file for details.
 
 ## Acknowledgments
-- NeurAlbertaTech Hackathon 2023
-- Economic simulation research community
-- FastAPI and React communities
-
-## Status
-Project is: _in active development_
-
+- NeurAlbertaTech Hackathon 2025
 
 
 <a href="https://github.com/Aarushb/NH25_flux_Atlas/graphs/contributors">
