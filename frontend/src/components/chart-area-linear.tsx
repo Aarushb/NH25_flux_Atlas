@@ -108,7 +108,7 @@ export function CustomD3Chart() {
       .attr("fill", "url(#area-gradient)")
       .attr("d", area);
 
-    // Render line with smooth transition
+    // render line with smooth transition
     const linePath = g
       .append("path")
       .datum(data)
@@ -117,12 +117,11 @@ export function CustomD3Chart() {
       .attr("stroke-width", 2)
       .attr("d", line);
 
-    // Animate smoothly using D3 transitions
+    
     areaPath.transition().duration(800).ease(d3.easeLinear).attr("d", area);
 
     linePath.transition().duration(800).ease(d3.easeLinear).attr("d", line);
 
-    // Axes
     const xAxis = d3.axisBottom(xScale).ticks(5);
     const yAxis = d3.axisLeft(yScale).ticks(5);
 

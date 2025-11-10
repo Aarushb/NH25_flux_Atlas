@@ -114,3 +114,4 @@ export default function AuctionForm({ sellerCountry, currentCountry, availableRe
     </form>
   );
 }
+

@@ -84,7 +84,9 @@ export default function SellMarket() {
 
   const chartIntervalRef = useRef<number | null>(null)
   const bidIntervalRef = useRef<number | null>(null)
+  const checkCompletionRef = useRef<number | null>(null)
   const roundTimerRef = useRef<number | null>(null)
+  const notifiedDropoutsRef = useRef<Map<string, boolean>>(new Map())
   const toast = useToast()
 
   const MAX_ROUNDS = 5
@@ -136,6 +138,7 @@ export default function SellMarket() {
           step++
         } else {
           clearInterval(timer)
+          notifiedDropoutsRef.current.clear()
           setSaleState((prev) =>
             prev
               ? {
@@ -147,7 +150,8 @@ export default function SellMarket() {
                   avgWinningBid: 0,
                   clusterBids: Array.from({ length: 6 }, (_, i) => {
                     const usedCountries = new Set<string>()
-                    const countryBids = Array.from({ length: COUNTRIES_PER_CLUSTER }, (__, idx) => {
+                    const numCountries = Math.floor(Math.random() * 3) + 6
+                    const countryBids = Array.from({ length: numCountries }, (__, idx) => {
                       let countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
                       while (usedCountries.has(countryName)) {
                         countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
@@ -168,7 +172,7 @@ export default function SellMarket() {
                       highestBid: 0,
                       leadingCountry: 0,
                       bidsSubmitted: 0,
-                      totalCountries: COUNTRIES_PER_CLUSTER,
+                      totalCountries: numCountries,
                     }
                   }),
                 }
@@ -183,7 +187,6 @@ export default function SellMarket() {
 
   useEffect(() => {
     if (saleState?.status === 'live' && saleState.currentRound <= MAX_ROUNDS) {
-      const notifiedDropouts = new Set<string>()
       
       bidIntervalRef.current = window.setInterval(() => {
         setSaleState((prev) => {
@@ -193,21 +196,23 @@ export default function SellMarket() {
             const updatedCountryBids = cluster.countryBids.map((bid) => {
               if (bid.droppedOut || bid.bidSubmitted) return bid
               
-              if (!bid.droppedOut && !bid.bidSubmitted && Math.random() < 0.05) {
+              if (!bid.droppedOut && !bid.bidSubmitted && Math.random() < 0.008) {
                 const notifKey = `${cluster.clusterId}-${bid.countryId}-${prev.currentRound}`
-                if (!notifiedDropouts.has(notifKey)) {
-                  notifiedDropouts.add(notifKey)
-                  toast.push({
-                    title: 'Country Withdrew',
-                    description: `${bid.countryName} from Cluster ${cluster.clusterId} has withdrawn from bidding`,
-                    level: 'error',
-                    timeout: 4000,
+                if (!notifiedDropoutsRef.current.get(notifKey)) {
+                  notifiedDropoutsRef.current.set(notifKey, true)
+                  queueMicrotask(() => {
+                    toast.push({
+                      title: 'Country Withdrew',
+                      description: `${bid.countryName} from Cluster ${cluster.clusterId} has withdrawn from bidding`,
+                      level: 'error',
+                      timeout: 3000,
+                    })
                   })
                 }
                 return { ...bid, droppedOut: true }
               }
               
-              if (!bid.bidSubmitted && Math.random() < 0.25) {
+              if (!bid.bidSubmitted && Math.random() < 0.35) {
                 return {
                   ...bid,
                   bidSubmitted: true,
@@ -222,7 +227,7 @@ export default function SellMarket() {
             const highest = activeBids.length > 0 ? Math.max(...activeBids.map((b) => b.amount)) : 0
             const leadingIdx = updatedCountryBids.findIndex((b) => b.amount === highest && !b.droppedOut && b.bidSubmitted)
             const bidsSubmitted = updatedCountryBids.filter((b) => b.bidSubmitted || b.droppedOut).length
-            const totalCountries = updatedCountryBids.filter((b) => !b.droppedOut).length
+            const totalCountries = updatedCountryBids.length
             
             return {
               ...cluster,
@@ -234,11 +239,33 @@ export default function SellMarket() {
             }
           })
           
-          const allBidsIn = newBids.every((c) => (c.bidsSubmitted ?? 0) >= (c.totalCountries ?? 0))
+          return {
+            ...prev,
+            clusterBids: newBids,
+          }
+        })
+      }, 500)
+
+      checkCompletionRef.current = window.setInterval(() => {
+        setSaleState((prev) => {
+          if (!prev || prev.status !== 'live') return prev
+          
+          const allBidsIn = prev.clusterBids.every((c) => {
+            const submitted = c.bidsSubmitted ?? 0
+            const total = c.totalCountries ?? 0
+            return total > 0 && submitted >= total
+          })
           
           if (allBidsIn && roundTimerRef.current === null) {
-            clearInterval(bidIntervalRef.current!)
-            bidIntervalRef.current = null
+            if (bidIntervalRef.current !== null) {
+              clearInterval(bidIntervalRef.current)
+              bidIntervalRef.current = null
+            }
+            
+            if (checkCompletionRef.current !== null) {
+              clearInterval(checkCompletionRef.current)
+              checkCompletionRef.current = null
+            }
             
             roundTimerRef.current = window.setTimeout(() => {
               setSaleState((p) => {
@@ -257,9 +284,8 @@ export default function SellMarket() {
                 
                 const nextRound = p.currentRound + 1
                 
-                roundTimerRef.current = null
-                
                 if (nextRound > MAX_ROUNDS) {
+                  roundTimerRef.current = null
                   return {
                     ...p,
                     status: 'completed',
@@ -270,10 +296,11 @@ export default function SellMarket() {
                 }
                 
                 const newClusterBids = p.clusterBids.map((cluster) => {
+                  const numCountries = Math.floor(Math.random() * 3) + 6
                   const usedCountries = new Set<string>()
                   return {
                     ...cluster,
-                    countryBids: Array.from({ length: COUNTRIES_PER_CLUSTER }, (_, idx) => {
+                    countryBids: Array.from({ length: numCountries }, (_, idx) => {
                       let countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
                       while (usedCountries.has(countryName)) {
                         countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
@@ -285,15 +312,18 @@ export default function SellMarket() {
                         amount: p.basePrice + Math.random() * 20 + 8,
                         timestamp: Date.now(),
                         bidSubmitted: false,
+                        droppedOut: false,
                       }
                     }),
                     currentRound: nextRound,
                     highestBid: 0,
                     leadingCountry: 0,
                     bidsSubmitted: 0,
-                    totalCountries: COUNTRIES_PER_CLUSTER,
+                    totalCountries: numCountries,
                   }
                 })
+                
+                roundTimerRef.current = null
                 
                 return {
                   ...p,
@@ -307,15 +337,13 @@ export default function SellMarket() {
             }, DECISION_DELAY_MS)
           }
           
-          return {
-            ...prev,
-            clusterBids: newBids,
-          }
+          return prev
         })
       }, 500)
 
       return () => {
         if (bidIntervalRef.current !== null) clearInterval(bidIntervalRef.current)
+        if (checkCompletionRef.current !== null) clearInterval(checkCompletionRef.current)
         if (roundTimerRef.current !== null) clearTimeout(roundTimerRef.current)
       }
     }
