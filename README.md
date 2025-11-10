@@ -221,7 +221,7 @@ Please read CONTRIBUTING.md for details on our code of conduct and the process f
 - Neamur
 - Hamse
 - Jacob
-- Cheri
+- Cherie
 
 ## License
 See the LICENSE file for details.
