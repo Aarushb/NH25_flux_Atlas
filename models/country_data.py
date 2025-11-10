@@ -1,8 +1,6 @@
 try:
     from .resourcess import Resource
-# Fall back to direct imports for when running this file as a script
 except ImportError:
-    # This block runs when `country.py` is executed as a script
     from resourcess import Resource
 
 country_resources: dict[str, dict[str, Resource]] = {
@@ -80,7 +78,7 @@ country_resources: dict[str, dict[str, Resource]] = {
         "GOLD": Resource(3.5, "thousand tonnes"),
     },
     "Somalia": {
-        "PETROLEUM": Resource(0.5, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(0.5, "billion barrels"),  
         "NATURAL_GAS": Resource(0.6, "trillion cubic meters"),
         "URANIUM": Resource(0.02, "million tonnes"),
         "IRON_ORE": Resource(0.5, "billion tonnes"),
@@ -89,12 +87,12 @@ country_resources: dict[str, dict[str, Resource]] = {
         "BAUXITE": Resource(1.2, "million tonnes"),
     },
     "Bangladesh": {
-        "PETROLEUM": Resource(1.0, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(1.0, "billion barrels"),  
         "NATURAL_GAS": Resource(0.2, "trillion cubic meters"),
         "COAL": Resource(3.3, "billion tonnes"),
     },
     "Germany": {
-        "PETROLEUM": Resource(2.0, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(2.0, "billion barrels"),  
         "COAL": Resource(46.0, "billion tonnes"),
         "URANIUM": Resource(0.01, "million tonnes"),
         "NICKEL": Resource(0.2, "million tonnes"),
@@ -103,7 +101,7 @@ country_resources: dict[str, dict[str, Resource]] = {
         "GRAPHITE": Resource(0.08, "million tonnes"),
     },
     "France": {
-        "PETROLEUM": Resource(1.5, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(1.5, "billion barrels"),  
         "COAL": Resource(0.1, "billion tonnes"),
         "URANIUM": Resource(0.4, "million tonnes"),
         "GOLD": Resource(0.8, "thousand tonnes"),
@@ -112,7 +110,7 @@ country_resources: dict[str, dict[str, Resource]] = {
         "NIOBIUM": Resource(0.02, "million tonnes"),
     },
     "Indonesia": {
-        "PETROLEUM": Resource(8.0, "billion barrels"),  # ADDED: Moderate supply
+        "PETROLEUM": Resource(8.0, "billion barrels"),  
         "COAL": Resource(104.0, "billion tonnes"),
         "NICKEL": Resource(13.0, "million tonnes"),
         "COPPER": Resource(0.9, "million tonnes"),
@@ -121,7 +119,7 @@ country_resources: dict[str, dict[str, Resource]] = {
         "COBALT": Resource(0.1, "million tonnes"),
     },
     "South Africa": {
-        "PETROLEUM": Resource(3.0, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(3.0, "billion barrels"),
         "COAL": Resource(128.0, "billion tonnes"),
         "GOLD": Resource(4.2, "thousand tonnes"),
         "NICKEL": Resource(3.5, "million tonnes"),
@@ -133,74 +131,73 @@ country_resources: dict[str, dict[str, Resource]] = {
         "PLATINUM": Resource(0.06, "million tonnes"),
     },
     "Pakistan": {
-        "PETROLEUM": Resource(0.8, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(0.8, "billion barrels"),  
         "COAL": Resource(3.8, "billion tonnes"),
         "GOLD": Resource(0.5, "thousand tonnes"),
         "IRON_ORE": Resource(0.4, "billion tonnes"),
         "COPPER": Resource(0.3, "million tonnes"),
     },
     "Slovakia": {
-        "PETROLEUM": Resource(2.0, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(2.0, "billion barrels"),  
         "NICKEL": Resource(0.15, "million tonnes"),
         "IRON_ORE": Resource(0.8, "billion tonnes"),
         "COBALT": Resource(0.02, "million tonnes"),
     },
     "Chile": {
-        "PETROLEUM": Resource(1.2, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(1.2, "billion barrels"),  
         "COPPER": Resource(18.0, "million tonnes"),
         "LITHIUM": Resource(9.0, "million tonnes"),
     },
     "Vietnam": {
-        "PETROLEUM": Resource(2.5, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(2.5, "billion barrels"),  
         "TIN": Resource(0.4, "million tonnes"),
         "TUNGSTEN": Resource(0.08, "million tonnes"),
         "RARE_EARTH_ELEMENTS": Resource(0.01, "million tonnes"),
     },
     "India": {
-        "PETROLEUM": Resource(5.0, "billion barrels"),  # ADDED: Moderate supply
+        "PETROLEUM": Resource(5.0, "billion barrels"),  
         "BAUXITE": Resource(4.0, "million tonnes"),
         "IRON_ORE": Resource(8.0, "billion tonnes"),
         "RARE_EARTH_ELEMENTS": Resource(0.01, "million tonnes"),
         "LITHIUM": Resource(0.10, "million tonnes"),
     },
     "Mozambique": {
-        "PETROLEUM": Resource(1.0, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(1.0, "billion barrels"),  
         "NATURAL_GAS": Resource(3.5, "trillion cubic meters"),
         "IRON_ORE": Resource(1.2, "billion tonnes"),
         "BAUXITE": Resource(0.8, "million tonnes"),
         "NIOBIUM": Resource(0.08, "million tonnes"),
     },
     "Switzerland": {
-        "PETROLEUM": Resource(0.3, "billion barrels"),  # ADDED: Tiny supply
+        "PETROLEUM": Resource(0.3, "billion barrels"),  
         "HYDROPOWER": Resource(18.0, "GW capacity"),
     },
     "Sri Lanka": {
-        "PETROLEUM": Resource(0.5, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(0.5, "billion barrels"),  
         "GRAPHITE": Resource(0.02, "million tonnes"),
     },
     "Kenya": {
-        "PETROLEUM": Resource(0.8, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(0.8, "billion barrels"),  
         "HYDROPOWER": Resource(2.0, "GW capacity"),
     },
     "Haiti": {
-        "PETROLEUM": Resource(0.2, "billion barrels"),  # ADDED: Tiny supply
+        "PETROLEUM": Resource(0.2, "billion barrels"),  
     },
     "Azerbaijan": {
-        "PETROLEUM": Resource(7.0, "billion barrels"),  # ADDED: Moderate supply
+        "PETROLEUM": Resource(7.0, "billion barrels"),  
     },
     "Latvia": {
-        "PETROLEUM": Resource(0.4, "billion barrels"),  # ADDED: Small supply
+        "PETROLEUM": Resource(0.4, "billion barrels"),  
     },
     "Australia": {
-        "PETROLEUM": Resource(4.0, "billion barrels"),  # ADDED: Moderate supply
+        "PETROLEUM": Resource(4.0, "billion barrels"),  
     },
     "Japan": {
-        "PETROLEUM": Resource(0.5, "billion barrels"),  # ADDED: Tiny supply (net importer)
+        "PETROLEUM": Resource(0.5, "billion barrels"),  
     },
 }
 
 
-# IMPROVED: More varied petroleum demands
 country_demands: dict[str, dict[str, Resource]] = {
     "Russia": {
         "LITHIUM": Resource(0.5, "million tonnes"),
@@ -223,7 +220,7 @@ country_demands: dict[str, dict[str, Resource]] = {
         "COAL": Resource(10.0, "billion tonnes"),
     },
     "Chad": {
-        "PETROLEUM": Resource(2.0, "billion barrels"),  # CHANGED: Reduced
+        "PETROLEUM": Resource(2.0, "billion barrels"),  
         "IRON_ORE": Resource(2.0, "billion tonnes"),
         "COPPER": Resource(0.3, "million tonnes"),
         "COAL": Resource(3.0, "billion tonnes"),
@@ -236,13 +233,13 @@ country_demands: dict[str, dict[str, Resource]] = {
         "COAL": Resource(20.0, "billion tonnes"),
     },
     "Brazil": {
-        "PETROLEUM": Resource(25.0, "billion barrels"),  # CHANGED: Reduced from 50
+        "PETROLEUM": Resource(25.0, "billion barrels"),  
         "NATURAL_GAS": Resource(15.0, "trillion cubic meters"),
         "COPPER": Resource(2.0, "million tonnes"),
         "RARE_EARTH_ELEMENTS": Resource(0.05, "million tonnes"),
     },
     "Oman": {
-        "PETROLEUM": Resource(3.0, "billion barrels"),  # CHANGED: Reduced
+        "PETROLEUM": Resource(3.0, "billion barrels"),  
         "IRON_ORE": Resource(5.0, "billion tonnes"),
         "COPPER": Resource(0.8, "million tonnes"),
         "COAL": Resource(8.0, "billion tonnes"),
@@ -250,7 +247,7 @@ country_demands: dict[str, dict[str, Resource]] = {
         "LITHIUM": Resource(0.2, "million tonnes"),
     },
     "United States": {
-        "PETROLEUM": Resource(60.0, "billion barrels"),  # CHANGED: Reduced from 100
+        "PETROLEUM": Resource(60.0, "billion barrels"),  
         "NATURAL_GAS": Resource(20.0, "trillion cubic meters"),
         "IRON_ORE": Resource(50.0, "billion tonnes"),
         "COPPER": Resource(5.0, "million tonnes"),
@@ -268,18 +265,18 @@ country_demands: dict[str, dict[str, Resource]] = {
         "RARE_EARTH_ELEMENTS": Resource(0.02, "million tonnes"),
     },
     "Somalia": {
-        "PETROLEUM": Resource(3.0, "billion barrels"),  # CHANGED: Reduced from 5
+        "PETROLEUM": Resource(3.0, "billion barrels"),  
         "COAL": Resource(2.0, "billion tonnes"),
         "IRON_ORE": Resource(1.0, "billion tonnes"),
     },
     "Bangladesh": {
-        "PETROLEUM": Resource(6.0, "billion barrels"),  # CHANGED: Reduced from 10
+        "PETROLEUM": Resource(6.0, "billion barrels"),
         "IRON_ORE": Resource(5.0, "billion tonnes"),
         "COPPER": Resource(0.5, "million tonnes"),
         "NICKEL": Resource(0.3, "million tonnes"),
     },
     "Germany": {
-        "PETROLEUM": Resource(45.0, "billion barrels"),  # CHANGED: Reduced from 80
+        "PETROLEUM": Resource(45.0, "billion barrels"),  
         "NATURAL_GAS": Resource(25.0, "trillion cubic meters"),
         "IRON_ORE": Resource(40.0, "billion tonnes"),
         "COPPER": Resource(3.0, "million tonnes"),
@@ -288,7 +285,7 @@ country_demands: dict[str, dict[str, Resource]] = {
         "NICKEL": Resource(1.5, "million tonnes"),
     },
     "France": {
-        "PETROLEUM": Resource(35.0, "billion barrels"),  # CHANGED: Reduced from 60
+        "PETROLEUM": Resource(35.0, "billion barrels"),  
         "NATURAL_GAS": Resource(20.0, "trillion cubic meters"),
         "IRON_ORE": Resource(30.0, "billion tonnes"),
         "COPPER": Resource(2.0, "million tonnes"),
@@ -296,44 +293,44 @@ country_demands: dict[str, dict[str, Resource]] = {
         "LITHIUM": Resource(1.0, "million tonnes"),
     },
     "Indonesia": {
-        "PETROLEUM": Resource(18.0, "billion barrels"),  # CHANGED: Reduced from 30
+        "PETROLEUM": Resource(18.0, "billion barrels"),  
         "IRON_ORE": Resource(20.0, "billion tonnes"),
         "COPPER": Resource(1.5, "million tonnes"),
         "LITHIUM": Resource(0.4, "million tonnes"),
     },
     "South Africa": {
-        "PETROLEUM": Resource(22.0, "billion barrels"),  # CHANGED: Reduced from 40
+        "PETROLEUM": Resource(22.0, "billion barrels"), 
         "NATURAL_GAS": Resource(10.0, "trillion cubic meters"),
         "COPPER": Resource(2.0, "million tonnes"),
         "LITHIUM": Resource(0.8, "million tonnes"),
     },
     "Pakistan": {
-        "PETROLEUM": Resource(15.0, "billion barrels"),  # CHANGED: Reduced from 25
+        "PETROLEUM": Resource(15.0, "billion barrels"),  
         "NATURAL_GAS": Resource(8.0, "trillion cubic meters"),
         "IRON_ORE": Resource(10.0, "billion tonnes"),
         "NICKEL": Resource(0.5, "million tonnes"),
     },
     "Slovakia": {
-        "PETROLEUM": Resource(8.0, "billion barrels"),  # CHANGED: Reduced from 15
+        "PETROLEUM": Resource(8.0, "billion barrels"),  
         "NATURAL_GAS": Resource(5.0, "trillion cubic meters"),
         "COPPER": Resource(1.0, "million tonnes"),
         "LITHIUM": Resource(0.3, "million tonnes"),
     },
     "Chile": {
-        "PETROLEUM": Resource(12.0, "billion barrels"),  # CHANGED: Reduced from 20
+        "PETROLEUM": Resource(12.0, "billion barrels"),  
         "NATURAL_GAS": Resource(8.0, "trillion cubic meters"),
         "COAL": Resource(15.0, "billion tonnes"),
         "IRON_ORE": Resource(10.0, "billion tonnes"),
     },
     "Vietnam": {
-        "PETROLEUM": Resource(10.0, "billion barrels"),  # CHANGED: Reduced from 18
+        "PETROLEUM": Resource(10.0, "billion barrels"),  
         "IRON_ORE": Resource(12.0, "billion tonnes"),
         "COPPER": Resource(1.0, "million tonnes"),
         "NICKEL": Resource(0.6, "million tonnes"),
         "LITHIUM": Resource(0.3, "million tonnes"),
     },
     "India": {
-        "PETROLEUM": Resource(80.0, "billion barrels"),  # CHANGED: Reduced from 150
+        "PETROLEUM": Resource(80.0, "billion barrels"),  
         "NATURAL_GAS": Resource(40.0, "trillion cubic meters"),
         "COAL": Resource(200.0, "billion tonnes"),
         "IRON_ORE": Resource(50.0, "billion tonnes"),
@@ -343,55 +340,55 @@ country_demands: dict[str, dict[str, Resource]] = {
         "RARE_EARTH_ELEMENTS": Resource(0.05, "million tonnes"),
     },
     "Mozambique": {
-        "PETROLEUM": Resource(5.0, "billion barrels"),  # CHANGED: Reduced from 8
+        "PETROLEUM": Resource(5.0, "billion barrels"),  
         "COAL": Resource(10.0, "billion tonnes"),
         "IRON_ORE": Resource(5.0, "billion tonnes"),
         "COPPER": Resource(0.4, "million tonnes"),
     },
     "Switzerland": {
-        "PETROLEUM": Resource(6.0, "billion barrels"),  # CHANGED: Reduced from 10
+        "PETROLEUM": Resource(6.0, "billion barrels"),  
         "NATURAL_GAS": Resource(5.0, "trillion cubic meters"),
         "IRON_ORE": Resource(8.0, "billion tonnes"),
         "COPPER": Resource(0.5, "million tonnes"),
         "LITHIUM": Resource(0.2, "million tonnes"),
     },
     "Sri Lanka": {
-        "PETROLEUM": Resource(7.0, "billion barrels"),  # CHANGED: Reduced from 12
+        "PETROLEUM": Resource(7.0, "billion barrels"),  
         "COAL": Resource(8.0, "billion tonnes"),
         "IRON_ORE": Resource(4.0, "billion tonnes"),
         "COPPER": Resource(0.3, "million tonnes"),
     },
     "Kenya": {
-        "PETROLEUM": Resource(9.0, "billion barrels"),  # CHANGED: Reduced from 15
+        "PETROLEUM": Resource(9.0, "billion barrels"),  
         "COAL": Resource(12.0, "billion tonnes"),
         "IRON_ORE": Resource(6.0, "billion tonnes"),
         "COPPER": Resource(0.5, "million tonnes"),
     },
     "Haiti": {
-        "PETROLEUM": Resource(3.0, "billion barrels"),  # CHANGED: Reduced from 5
+        "PETROLEUM": Resource(3.0, "billion barrels"),  
         "COAL": Resource(3.0, "billion tonnes"),
         "IRON_ORE": Resource(2.0, "billion tonnes"),
     },
     "Azerbaijan": {
-        "PETROLEUM": Resource(5.0, "billion barrels"),  # CHANGED: Reduced (was no demand)
+        "PETROLEUM": Resource(5.0, "billion barrels"),  
         "IRON_ORE": Resource(10.0, "billion tonnes"),
         "COPPER": Resource(1.0, "million tonnes"),
         "NICKEL": Resource(0.5, "million tonnes"),
         "LITHIUM": Resource(0.2, "million tonnes"),
     },
     "Latvia": {
-        "PETROLEUM": Resource(5.0, "billion barrels"),  # CHANGED: Reduced from 8
+        "PETROLEUM": Resource(5.0, "billion barrels"),
         "NATURAL_GAS": Resource(3.0, "trillion cubic meters"),
         "IRON_ORE": Resource(5.0, "billion tonnes"),
         "COPPER": Resource(0.3, "million tonnes"),
     },
     "Australia": {
-        "PETROLEUM": Resource(18.0, "billion barrels"),  # CHANGED: Reduced from 30
+        "PETROLEUM": Resource(18.0, "billion barrels"),  
         "LITHIUM": Resource(5.0, "million tonnes"),
         "RARE_EARTH_ELEMENTS": Resource(0.03, "million tonnes"),
     },
     "Japan": {
-        "PETROLEUM": Resource(55.0, "billion barrels"),  # CHANGED: Reduced from 100
+        "PETROLEUM": Resource(55.0, "billion barrels"),  
         "NATURAL_GAS": Resource(30.0, "trillion cubic meters"),
         "COAL": Resource(80.0, "billion tonnes"),
         "IRON_ORE": Resource(60.0, "billion tonnes"),
