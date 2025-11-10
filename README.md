@@ -1,4 +1,4 @@
-# Flux_Atlas: Economic Resource Trading Simulation
+# FluxAtlas: Economic Resource Trading Engine
 
 ## Overview
 NH25_Flux_Atlas is a sophisticated economic simulation platform that models resource trading between countries using psychologically-informed bidding behaviors and cluster-based auction mechanisms.
