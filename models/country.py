@@ -57,16 +57,20 @@ class Country:
         
         gap = supply_amount - demand_amount
         
-        if demand_amount == 0:
-            status = "NO_DEMAND"
-        elif supply_amount == 0:
-            status = "NO_SUPPLY"
-        elif gap > 0:
-            status = "SURPLUS"  # Can export
+        status = ""
+        
+        # --- START OF BUG FIX ---
+        # The logic must check for surplus/deficit *first*
+        # to correctly identify export/import opportunities.
+        
+        if gap > 0:
+            status = "SURPLUS"  # Can export (e.g., Supply=80, Demand=0)
         elif gap < 0:
-            status = "DEFICIT"  # Needs to import
-        else:
-            status = "BALANCED"
+            status = "DEFICIT"  # Needs to import (e.g., Supply=0, Demand=50)
+        else: # gap == 0
+            status = "BALANCED" # Supply == Demand (or both are 0)
+        
+        # --- END OF BUG FIX ---
         
         return {
             "resource": resource_name,
@@ -115,6 +119,13 @@ if __name__ == "__main__":
     print("\nAll Russia's resources:")
     for resource_name, resource in russia.resources.items():
         print(f"  {resource_name}: {resource}")
+        
+    print("\n--- Testing Gap Analysis (Bug Fix) ---")
+    russia_analysis = russia.get_all_supply_demand_analysis()
+    print(f"  Russia PETROLEUM Gap: {russia_analysis.get('PETROLEUM')}")
+    print(f"  Russia LITHIUM Gap: {russia_analysis.get('LITHIUM')}")
+    print(f"  Russia Exports: {russia.get_export_resources()}")
+    print(f"  Russia Imports: {russia.get_import_needs()}")
     
     print("\n" + "="*50 + "\n")
     
@@ -131,4 +142,4 @@ if __name__ == "__main__":
     haiti = Country("Haiti", 3183)
     print(haiti)
     print(f"Haiti has resources: {len(haiti.resources) > 0}")
-
+    print(f"  Haiti Imports: {haiti.get_import_needs()}")
