@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 interface AuctionFormProps {
   sellerCountry?: string | null; 
-  currentCountry?: string; 
+  currentCountry?: string | null;
   availableResources?: string[]; 
 }
 

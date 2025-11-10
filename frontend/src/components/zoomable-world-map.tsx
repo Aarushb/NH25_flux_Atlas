@@ -25,8 +25,8 @@ interface GeographyFeature extends Feature<Geometry, { name: string }> {
 }
 
 type MapProps = {
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
+  value: string | null;
+  setValue: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
 export default function ZoomableWorldMap({

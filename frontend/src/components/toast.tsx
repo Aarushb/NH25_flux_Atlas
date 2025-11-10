@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from 'react'
+import React, { createContext, useState } from 'react'
 
 type ToastLevel = 'info' | 'success' | 'error'
 
@@ -86,11 +86,4 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     </ToastContext.Provider>
   )
 }
-
-export const useToast = () => {
-  const ctx = useContext(ToastContext)
-  if (!ctx) throw new Error('useToast must be used inside ToastProvider')
-  return ctx
-}
-
 export default ToastProvider

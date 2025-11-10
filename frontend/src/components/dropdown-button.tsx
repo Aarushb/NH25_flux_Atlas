@@ -2,22 +2,16 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import React from "react";
 
 type DropDownProps = {
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
+  value: string | null;
+  setValue: React.Dispatch<React.SetStateAction<string | null>>;
   values: string[];
+  placeholder:string;
 };
 
 export function DropdownMenuDemo({ value, setValue, values }: DropDownProps) {

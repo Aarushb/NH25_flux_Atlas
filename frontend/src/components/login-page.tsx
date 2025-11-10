@@ -33,6 +33,7 @@ export default function LoginPage({ countries, onLogin }: LoginPageProps) {
     onLogin(trimmed, country);
   };
 
+  console.log(countries)
 
   return (
     <div className="card glass max-w-md mx-auto mt-8">
