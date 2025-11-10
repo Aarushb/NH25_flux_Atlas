@@ -39,7 +39,7 @@ def calculate_cluster_auction_quantities(total_quantity: float, clusters: List, 
 class Bid:
     """Represents a sealed bid in an auction."""
     country: Country
-    bid_price_per_unit: float  # Price per unit bidder is willing to pay
+    bid_price_per_unit: float  
     timestamp: datetime = field(default_factory=datetime.now)
     is_revealed: bool = False
     
@@ -61,8 +61,8 @@ class Auction:
     resource_name: str
     quantity: float
     resource_unit: str
-    asking_price_per_unit: float  # Seller's asking price per unit
-    current_market_price: float   # Current market price per unit
+    asking_price_per_unit: float  
+    current_market_price: float   
     status: AuctionStatus = AuctionStatus.PENDING
     bids: List[Bid] = field(default_factory=list)
     winner: Optional[Country] = None
@@ -117,27 +117,26 @@ class Auction:
             print(f" {country.name} cannot bid on their own resource")
             return False
         
-        # Calculate total bid amount
+        
         total_bid = bid_price_per_unit * self.quantity
         
-        # Check if country has enough budget
+        
         if country.budget < total_bid:
             print(f" {country.name} doesn't have enough budget")
             print(f"   Has: ${country.budget:.2f}B, Needs: ${total_bid:.2f}B")
             return False
         
-        # Check if bid meets asking price
+        
         if bid_price_per_unit < self.asking_price_per_unit:
             print(f" Bid too low. Minimum: ${self.asking_price_per_unit:.2f} per {self.resource_unit}")
             return False
         
-        # Check if country already bid
+        
         for bid in self.bids:
             if bid.country == country:
                 print(f" {country.name} has already placed a bid")
                 return False
         
-        # Submit sealed bid
         bid = Bid(country=country, bid_price_per_unit=bid_price_per_unit, is_revealed=False)
         self.bids.append(bid)
         print(f" {country.name} submitted a sealed bid")
@@ -176,30 +175,24 @@ class Auction:
             self.status = AuctionStatus.CANCELLED
             return False
         
-        # Reveal all bids
         self.reveal_bids()
         
-        # Find highest bid
         highest_bid = max(self.bids, key=lambda b: b.bid_price_per_unit)
         winner = highest_bid.country
         final_price_per_unit = highest_bid.bid_price_per_unit
         total_price = final_price_per_unit * self.quantity
         
-        # Transfer resource from seller to winner
         seller_resource = self.seller.get_resource(self.resource_name)
         seller_resource.amount -= self.quantity
         
-        # Add to winner's resources
         if winner.has_resource(self.resource_name):
             winner.resources[self.resource_name].amount += self.quantity
         else:
             winner.resources[self.resource_name] = Resource(self.quantity, self.resource_unit)
         
-        # Transfer money
         winner.budget -= total_price
         self.seller.budget += total_price
         
-        # Update auction status
         self.winner = winner
         self.final_price_per_unit = final_price_per_unit
         self.status = AuctionStatus.COMPLETED
