@@ -153,31 +153,40 @@ const TopTickers = () => {
      </div>
 
 
-        <div className="market-data">
-
-            <div className={"parameters"}>
+            <table className="market-data">
+            <thead className={"parameters"}>
+            <tr>
             {Object.keys(marketData[0].indices[0]).map((key, index) => (
-                <div className="parameter">
+                <th className="parameter">
                     {key}
-                </div>
+                </th>
             ))}
-            </div>
+            </tr>
+            </thead>
+
+            <tbody className="region-data">
             {marketData.map((region, index)=> (
-                <div>
-                <div className="region"><p style={{margin:0, width:"100%"}}>{region.region} </p> </div>
-                <div className="region-data">
+                <>
+                <tr>
+               <td className="region" colSpan="5">{region.region} </td>
+                </tr>
+
                     {region.indices.map((index, key) => (
-                        <div>
+                        <tr>
                             {Object.keys(index).map((key) => (
-                                <div key={key}>{index[key]}</div>
+                                <td key={key}>{index[key]}</td>
                             ))}
-                        </div>
+
+                        </tr>
                     ))}
 
-                </div>
-                </div>
+
+                </>
             ))}
-        </div>
+        </tbody>
+            </table>
+
+
     </div>
 
     )
@@ -263,7 +272,8 @@ const NUSTrend = () => {
     };
 
     return (
-        <div style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
+        <div style={{ width: "100%", maxWidth: "400px", margin: "0 auto" }}>
+            <h3>NUS trend</h3>
             <Chart options={options} series={series} type="area" height={300} />
         </div>
     );
@@ -352,7 +362,8 @@ const MarketIndexChart = () => {
     };
 
     return (
-        <div style={{ width: "100%", maxWidth: "500px", margin: "0 auto" }}>
+        <div style={{ width: "100%", maxWidth: "400px", margin: "0 auto" }}>
+            <h3>Market Index Overview</h3>
             <Chart options={options} series={series} type="area" height={300} />
         </div>
     );
@@ -380,6 +391,11 @@ function Dashboard() {
             <TopTickers />
        </div>
 
+           <div className="charts">
+               <MarketIndexChart />
+               <NUSTrend />
+           </div>
+
            <div className="simulation-panel">
                <SimulationPanel />
            </div>
@@ -387,14 +403,6 @@ function Dashboard() {
        <div className='worldmap'>
            <GlobalMap />
        </div>
-
-
-
-       <div className="charts">
-           <MarketIndexChart />
-           <NUSTrend />
-       </div>
-
 
        </div>
 

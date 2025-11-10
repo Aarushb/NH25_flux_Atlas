@@ -5,6 +5,7 @@ body {
   sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: "Montserrat", sans-serif;
 }
 
 code {
@@ -33,7 +34,7 @@ code {
 }
 
 .simulation-panel{
-  width: 900px;
+  width: 600px;
   height: 300px;
   display: inline;
   border: 1px teal solid;
@@ -101,12 +102,14 @@ h2{
   color: white;
 }
 
-
-
 .charts{
-display: flex;
+display: inline-block;
+  width: 430px;
   gap: 10px;
-  flex-wrap: wrap;
+}
+
+h3{
+  text-align: center;
 }
 
 .scorecards{
@@ -169,6 +172,7 @@ h5{
 .top-tickers{
   background-color: darkslategrey;
   color: white;
+  border: 3px gold solid;
 }
 
 .region{
@@ -182,8 +186,10 @@ h5{
   display: flex;
 }
 
-.region-data div {
-  margin-right: 20px;
+.market-data{
+
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .market-data .parameters{
@@ -191,6 +197,15 @@ h5{
   background-color: rgba(0,0,0,0.5);
   opacity: 70%;
   gap: 40px;
-
 }
 
+tr{
+  display: flex;
+  width: 100%;
+}
+
+th, td{
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
