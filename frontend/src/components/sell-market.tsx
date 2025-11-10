@@ -23,13 +23,15 @@ interface ClusterBid {
     timestamp: number
     accepted?: boolean
     droppedOut?: boolean
-    bidHistory?: number[]
+    bidSubmitted?: boolean
   }>
   currentRound: number
   highestBid: number
   leadingCountry: number
   bidVelocity?: number
   momentum?: number
+  bidsSubmitted?: number
+  totalCountries?: number
 }
 
 interface SaleState {
@@ -156,6 +158,7 @@ export default function SellMarket() {
                         countryName,
                         amount: prev.basePrice + Math.random() * 15 + 5,
                         timestamp: Date.now(),
+                        bidSubmitted: false,
                       }
                     })
                     return {
@@ -164,6 +167,8 @@ export default function SellMarket() {
                       currentRound: 1,
                       highestBid: 0,
                       leadingCountry: 0,
+                      bidsSubmitted: 0,
+                      totalCountries: COUNTRIES_PER_CLUSTER,
                     }
                   }),
                 }
@@ -183,12 +188,10 @@ export default function SellMarket() {
           if (!prev || prev.status !== 'live') return prev
           
           const newBids = prev.clusterBids.map((cluster) => {
-            const prevHighest = cluster.highestBid
-            
             const updatedCountryBids = cluster.countryBids.map((bid) => {
-              if (bid.droppedOut) return bid
+              if (bid.droppedOut || bid.bidSubmitted) return bid
               
-              if (!bid.droppedOut && Math.random() < 0.03) {
+              if (!bid.droppedOut && !bid.bidSubmitted && Math.random() < 0.05) {
                 toast.push({
                   title: 'Country Withdrew',
                   description: `${bid.countryName} from Cluster ${cluster.clusterId} has withdrawn from bidding`,
@@ -198,102 +201,110 @@ export default function SellMarket() {
                 return { ...bid, droppedOut: true }
               }
               
-              const newAmount = bid.amount + Math.random() * 3 + 1
-              const history = bid.bidHistory || []
-              
-              return {
-                ...bid,
-                amount: newAmount,
-                timestamp: Date.now(),
-                bidHistory: [...history.slice(-4), newAmount],
+              if (!bid.bidSubmitted && Math.random() < 0.25) {
+                return {
+                  ...bid,
+                  bidSubmitted: true,
+                  timestamp: Date.now(),
+                }
               }
+              
+              return bid
             })
             
-            const activeBids = updatedCountryBids.filter((b) => !b.droppedOut)
+            const activeBids = updatedCountryBids.filter((b) => !b.droppedOut && b.bidSubmitted)
             const highest = activeBids.length > 0 ? Math.max(...activeBids.map((b) => b.amount)) : 0
-            const leadingIdx = updatedCountryBids.findIndex((b) => b.amount === highest && !b.droppedOut)
-            
-            const velocity = highest - prevHighest
-            const momentum = velocity > 0 ? (velocity / prevHighest) * 100 : 0
+            const leadingIdx = updatedCountryBids.findIndex((b) => b.amount === highest && !b.droppedOut && b.bidSubmitted)
+            const bidsSubmitted = updatedCountryBids.filter((b) => b.bidSubmitted || b.droppedOut).length
+            const totalCountries = updatedCountryBids.filter((b) => !b.droppedOut).length
             
             return {
               ...cluster,
               countryBids: updatedCountryBids,
               highestBid: highest,
               leadingCountry: leadingIdx,
-              bidVelocity: velocity,
-              momentum,
+              bidsSubmitted,
+              totalCountries,
             }
           })
+          
+          const allBidsIn = newBids.every((c) => c.bidsSubmitted === c.totalCountries)
+          
+          if (allBidsIn && roundTimerRef.current === null) {
+            roundTimerRef.current = window.setTimeout(() => {
+              setSaleState((p) => {
+                if (!p || p.status !== 'live') return p
+                
+                const winners = p.clusterBids.map((c, idx) => ({
+                  clusterId: idx + 1,
+                  winningBid: c.highestBid,
+                  round: p.currentRound,
+                }))
+                
+                const newRevenue = winners.reduce((sum, w) => sum + w.winningBid, 0)
+                const totalRev = p.totalRevenue + newRevenue
+                const totalWinners = p.roundWinners.length + winners.length
+                const avgBid = totalWinners > 0 ? totalRev / totalWinners : 0
+                
+                const nextRound = p.currentRound + 1
+                
+                if (nextRound > MAX_ROUNDS) {
+                  if (bidIntervalRef.current !== null) clearInterval(bidIntervalRef.current)
+                  return {
+                    ...p,
+                    status: 'completed',
+                    roundWinners: [...p.roundWinners, ...winners],
+                    totalRevenue: totalRev,
+                    avgWinningBid: avgBid,
+                  }
+                }
+                
+                const newClusterBids = p.clusterBids.map((cluster) => {
+                  const usedCountries = new Set<string>()
+                  return {
+                    ...cluster,
+                    countryBids: Array.from({ length: COUNTRIES_PER_CLUSTER }, (_, idx) => {
+                      let countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
+                      while (usedCountries.has(countryName)) {
+                        countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
+                      }
+                      usedCountries.add(countryName)
+                      return {
+                        countryId: idx,
+                        countryName,
+                        amount: p.basePrice + Math.random() * 20 + 8,
+                        timestamp: Date.now(),
+                        bidSubmitted: false,
+                      }
+                    }),
+                    currentRound: nextRound,
+                    highestBid: 0,
+                    leadingCountry: 0,
+                    bidsSubmitted: 0,
+                    totalCountries: COUNTRIES_PER_CLUSTER,
+                  }
+                })
+                
+                roundTimerRef.current = null
+                
+                return {
+                  ...p,
+                  currentRound: nextRound,
+                  clusterBids: newClusterBids,
+                  roundWinners: [...p.roundWinners, ...winners],
+                  totalRevenue: totalRev,
+                  avgWinningBid: avgBid,
+                }
+              })
+            }, DECISION_DELAY_MS)
+          }
           
           return {
             ...prev,
             clusterBids: newBids,
           }
         })
-      }, 2000)
-
-      roundTimerRef.current = window.setTimeout(() => {
-        setSaleState((prev) => {
-          if (!prev || prev.status !== 'live') return prev
-          
-          const winners = prev.clusterBids.map((c, idx) => ({
-            clusterId: idx + 1,
-            winningBid: c.highestBid,
-            round: prev.currentRound,
-          }))
-          
-          const newRevenue = winners.reduce((sum, w) => sum + w.winningBid, 0)
-          const totalRev = prev.totalRevenue + newRevenue
-          const totalWinners = prev.roundWinners.length + winners.length
-          const avgBid = totalWinners > 0 ? totalRev / totalWinners : 0
-          
-          const nextRound = prev.currentRound + 1
-          
-          if (nextRound > MAX_ROUNDS) {
-            if (bidIntervalRef.current !== null) clearInterval(bidIntervalRef.current)
-            return {
-              ...prev,
-              status: 'completed',
-              roundWinners: [...prev.roundWinners, ...winners],
-              totalRevenue: totalRev,
-              avgWinningBid: avgBid,
-            }
-          }
-          
-          const newClusterBids = prev.clusterBids.map((cluster) => {
-            const usedCountries = new Set<string>()
-            return {
-              ...cluster,
-              countryBids: Array.from({ length: COUNTRIES_PER_CLUSTER }, (_, idx) => {
-                let countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
-                while (usedCountries.has(countryName)) {
-                  countryName = COUNTRY_NAMES[Math.floor(Math.random() * COUNTRY_NAMES.length)]
-                }
-                usedCountries.add(countryName)
-                return {
-                  countryId: idx,
-                  countryName,
-                  amount: prev.basePrice + Math.random() * 20 + 8,
-                  timestamp: Date.now(),
-                }
-              }),
-              currentRound: nextRound,
-              highestBid: 0,
-              leadingCountry: 0,
-            }
-          })
-          
-          return {
-            ...prev,
-            currentRound: nextRound,
-            clusterBids: newClusterBids,
-            roundWinners: [...prev.roundWinners, ...winners],
-            totalRevenue: totalRev,
-            avgWinningBid: avgBid,
-          }
-        })
-      }, DECISION_DELAY_MS)
+      }, 500)
 
       return () => {
         if (bidIntervalRef.current !== null) clearInterval(bidIntervalRef.current)
@@ -533,21 +544,26 @@ export default function SellMarket() {
                     key={cluster.clusterId}
                     className="border border-[#00ff7f]/30 bg-black/50 p-4 rounded relative overflow-hidden"
                     style={{
-                      boxShadow: cluster.highestBid === globalMax ? '0 0 20px rgba(0,255,127,0.3)' : 'none',
+                      boxShadow: cluster.highestBid === globalMax && cluster.bidsSubmitted === cluster.totalCountries ? '0 0 20px rgba(0,255,127,0.3)' : 'none',
                     }}
                   >
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-800 overflow-hidden">
+                      <div
+                        className="h-full bg-[#00ff7f] transition-all duration-300"
+                        style={{
+                          width: `${(cluster.totalCountries ?? 0) > 0 ? ((cluster.bidsSubmitted ?? 0) / (cluster.totalCountries ?? 1)) * 100 : 0}%`,
+                        }}
+                      ></div>
+                    </div>
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-xs text-zinc-500">CLUSTER {cluster.clusterId}</div>
-                      {cluster.momentum !== undefined && cluster.momentum > 0 && (
-                        <div className="flex items-center gap-1">
-                          <div className="text-[10px] text-[#00ff7f]">▲ {cluster.momentum.toFixed(1)}%</div>
-                          <div className="text-[10px] text-zinc-500">momentum</div>
-                        </div>
-                      )}
+                      <div className="text-[10px] text-zinc-400">
+                        {cluster.bidsSubmitted ?? 0}/{cluster.totalCountries ?? 0} in
+                      </div>
                     </div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {cluster.countryBids
-                        .filter((bid) => !bid.droppedOut)
+                        .filter((bid) => !bid.droppedOut && bid.bidSubmitted)
                         .map((bid, _idx) => ({ ...bid, originalIdx: bid.countryId }))
                         .sort((a, b) => b.amount - a.amount)
                         .map((bid, _rank) => {
@@ -575,8 +591,13 @@ export default function SellMarket() {
                           {cluster.countryBids.filter((b) => b.droppedOut).length} withdrew
                         </div>
                       )}
+                      {((cluster.bidsSubmitted ?? 0) < (cluster.totalCountries ?? 0)) && (
+                        <div className="text-xs text-zinc-600 italic mt-2">
+                          Waiting for {((cluster.totalCountries ?? 0) - (cluster.bidsSubmitted ?? 0))} bids...
+                        </div>
+                      )}
                     </div>
-                    {cluster.highestBid === globalMax && (
+                    {cluster.highestBid === globalMax && ((cluster.bidsSubmitted ?? 0) === (cluster.totalCountries ?? 0)) && (
                       <div className="absolute top-2 right-2">
                         <div className="text-xs font-bold text-[#00ff7f] bg-[#00ff7f]/20 px-2 py-1 rounded">
                           LEADING
