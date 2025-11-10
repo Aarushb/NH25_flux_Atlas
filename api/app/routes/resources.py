@@ -9,13 +9,8 @@ from uuid import UUID
 router = APIRouter(prefix="/resources", tags=["resources"])
 
 def get_db():
-    from app.main import SessionLocal
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
+    from app.main import get_db as main_get_db
+    yield from main_get_db()
 @router.post("/", response_model=ResourceResponse)
 def create_resource(resource: ResourceCreate, db: Session = Depends(get_db)):
     repo = ResourceRepository(db)

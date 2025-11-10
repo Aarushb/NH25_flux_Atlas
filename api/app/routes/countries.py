@@ -9,13 +9,8 @@ from uuid import UUID
 router = APIRouter(prefix="/countries", tags=["countries"])
 
 def get_db():
-    from app.main import SessionLocal
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
+    from app.main import get_db as main_get_db
+    yield from main_get_db()
 @router.post("/", response_model=CountryResponse)
 def create_country(country: CountryCreate, db: Session = Depends(get_db)):
     repo = CountryRepository(db)

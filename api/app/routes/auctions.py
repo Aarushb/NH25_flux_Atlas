@@ -13,13 +13,8 @@ from uuid import UUID
 router = APIRouter(prefix="/auctions", tags=["auctions"])
 
 def get_db():
-    from app.main import SessionLocal
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
+    from app.main import get_db as main_get_db
+    yield from main_get_db()
 @router.post("/", response_model=AuctionInfoResponse)
 def create_auction(auction: AuctionInfoCreate, db: Session = Depends(get_db)):
     repo = AuctionRepository(db)

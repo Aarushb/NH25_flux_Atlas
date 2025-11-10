@@ -10,7 +10,13 @@ engine = create_engine(Config.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base.metadata.create_all(bind=engine)
-
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        db.bind.dispose()  # Close connection pool
 app = FastAPI(title="EcoTech Auction API", version="2.0.0")
 
 app.add_middleware(
