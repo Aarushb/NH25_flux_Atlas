@@ -88,7 +88,7 @@ export default function SellMarket() {
   const toast = useToast()
 
   const MAX_ROUNDS = 5
-  const DECISION_DELAY_MS = 3000
+  const DECISION_DELAY_MS = 1000
   const COUNTRIES_PER_CLUSTER = 7
   const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -183,6 +183,8 @@ export default function SellMarket() {
 
   useEffect(() => {
     if (saleState?.status === 'live' && saleState.currentRound <= MAX_ROUNDS) {
+      const notifiedDropouts = new Set<string>()
+      
       bidIntervalRef.current = window.setInterval(() => {
         setSaleState((prev) => {
           if (!prev || prev.status !== 'live') return prev
@@ -192,12 +194,16 @@ export default function SellMarket() {
               if (bid.droppedOut || bid.bidSubmitted) return bid
               
               if (!bid.droppedOut && !bid.bidSubmitted && Math.random() < 0.05) {
-                toast.push({
-                  title: 'Country Withdrew',
-                  description: `${bid.countryName} from Cluster ${cluster.clusterId} has withdrawn from bidding`,
-                  level: 'error',
-                  timeout: 4000,
-                })
+                const notifKey = `${cluster.clusterId}-${bid.countryId}-${prev.currentRound}`
+                if (!notifiedDropouts.has(notifKey)) {
+                  notifiedDropouts.add(notifKey)
+                  toast.push({
+                    title: 'Country Withdrew',
+                    description: `${bid.countryName} from Cluster ${cluster.clusterId} has withdrawn from bidding`,
+                    level: 'error',
+                    timeout: 4000,
+                  })
+                }
                 return { ...bid, droppedOut: true }
               }
               
@@ -228,9 +234,12 @@ export default function SellMarket() {
             }
           })
           
-          const allBidsIn = newBids.every((c) => c.bidsSubmitted === c.totalCountries)
+          const allBidsIn = newBids.every((c) => (c.bidsSubmitted ?? 0) >= (c.totalCountries ?? 0))
           
           if (allBidsIn && roundTimerRef.current === null) {
+            clearInterval(bidIntervalRef.current!)
+            bidIntervalRef.current = null
+            
             roundTimerRef.current = window.setTimeout(() => {
               setSaleState((p) => {
                 if (!p || p.status !== 'live') return p
@@ -248,8 +257,9 @@ export default function SellMarket() {
                 
                 const nextRound = p.currentRound + 1
                 
+                roundTimerRef.current = null
+                
                 if (nextRound > MAX_ROUNDS) {
-                  if (bidIntervalRef.current !== null) clearInterval(bidIntervalRef.current)
                   return {
                     ...p,
                     status: 'completed',
@@ -284,8 +294,6 @@ export default function SellMarket() {
                     totalCountries: COUNTRIES_PER_CLUSTER,
                   }
                 })
-                
-                roundTimerRef.current = null
                 
                 return {
                   ...p,
