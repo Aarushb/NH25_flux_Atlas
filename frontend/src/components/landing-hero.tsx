@@ -41,6 +41,8 @@ export default function LandingHero() {
   }, []);
 
   const onArrowClick = () => {
+    // dispatch navigation intent for the app to open the login page
+    window.dispatchEvent(new CustomEvent("navigate:login"));
     const target = document.getElementById("main-content");
     if (target) {
       target.scrollIntoView({ behavior: "smooth" });
@@ -78,8 +80,8 @@ export default function LandingHero() {
         </div>
 
         {finished && (
-          <button className="landing-start-btn" aria-label="Start the fair trade" onClick={onArrowClick}>
-            Start the fair trade
+          <button className="landing-start-btn" aria-label="Start the fair trade, log in" onClick={onArrowClick}>
+            Start the fair trade, log in
           </button>
         )}
       </div>

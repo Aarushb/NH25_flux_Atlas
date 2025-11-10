@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import LoginPage from "./components/login-page";
 import LandingHero from "./components/landing-hero";
 import ZoomableWorldMap from "./components/zoomable-world-map";
 import MarketHealthPanel from "./components/market-health-panel";
@@ -45,9 +46,15 @@ const countries: string[] = [
 const resources = ["Aluminum", "Oil", "Natural Gas", "Uranium"];
 
 function App() {
-  const [currentPage, _setCurrentPage] = useState<string>("dashboard");
+  const [currentPage, setCurrentPage] = useState<string>("dashboard");
   const [resource, setResource] = useState<string>("Aluminum");
   const [country, setCountry] = useState<string>("World");
+
+  useEffect(() => {
+    const handler = () => setCurrentPage("login");
+    window.addEventListener("navigate:login", handler as EventListener);
+    return () => window.removeEventListener("navigate:login", handler as EventListener);
+  }, []);
 
   return (
     <>
@@ -55,15 +62,27 @@ function App() {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-semibold">
-              {currentPage === "dashboard" && "Dashboard"}
+              {currentPage === "dashboard" && "FluxAtlas"}
               {currentPage === "analytics" && "Analytics"}
               {currentPage === "sell" && "Sell Resources"}
               {currentPage === "buy" && "Buy Resources"}
+              {currentPage === "login" && "Representative login"}
             </h1>
           </div>
         </header>
         <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 overflow-y-auto">
           <LandingHero />
+
+          {currentPage === "login" && (
+            <LoginPage
+              countries={countries}
+              onLogin={(_, selectedCountry) => {
+                // simple local navigation; set selected country and go to dashboard
+                if (selectedCountry) setCountry(selectedCountry);
+                setCurrentPage("dashboard");
+              }}
+            />
+          )}
           {currentPage === "dashboard" && (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">

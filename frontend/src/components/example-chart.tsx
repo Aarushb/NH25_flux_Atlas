@@ -43,7 +43,6 @@ export function Component() {
     return () => clearInterval(id);
   }, []);
 
-  // Build a length-6 sliding window that wraps around the 12-month array
   const visibleData = Array.from({ length: SLICE_LENGTH }, (_, i) => {
     return chartData[(start + i) % chartData.length];
   });
@@ -57,4 +56,4 @@ export function Component() {
     </ChartContainer>
   );
 }
-// ...existing code...
+
