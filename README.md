@@ -215,12 +215,13 @@ run_bidding_simulation(
 Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
 
 ## Contributors
+- Aarush Bhat
+- Cong Thinh Nguyen
+- Sashreek Addanki
 - Neamur
-- Arush
-- Cong
+- Hamse
 - Jacob
-- Chrea
-- Shashreek
+- Cheri
 
 ## License
 See the LICENSE file for details.
