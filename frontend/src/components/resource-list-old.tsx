@@ -39,7 +39,7 @@ export default function ResourceList({ resources = DUMMY }: { resources?: Resour
   const timersRef = useRef<Record<string, number>>({})
 
   const toast = useToast()
-  const MAX_ROUNDS = 5
+  const MAX_ROUNDS = 3
   const DECISION_DELAY_MS = 3000
   const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -182,7 +182,7 @@ export default function ResourceList({ resources = DUMMY }: { resources?: Resour
 
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => { setSelected(null); setCurrentBidId(null); }} />
+          <div className="absolute inset-0 bg-black/60" onClick={() => setSelected(null)} />
           <div className="w-[1000px] max-w-[98vw] z-60">
             <Card className="glass backdrop-blur-lg bg-white/5 border border-zinc-700">
               <CardContent>
@@ -192,7 +192,7 @@ export default function ResourceList({ resources = DUMMY }: { resources?: Resour
                     <div className="text-sm text-muted-foreground">Supply & demand overview</div>
                   </div>
                   <div>
-                    <button className="btn" onClick={() => { setSelected(null); setCurrentBidId(null); }}>
+                    <button className="btn" onClick={() => setSelected(null)}>
                       Close
                     </button>
                   </div>
@@ -456,6 +456,13 @@ export default function ResourceList({ resources = DUMMY }: { resources?: Resour
                           </div>
                         </div>
                       )}
+                        </table>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-end">
+                        <div className="text-sm text-white">Total:</div>
+                        <div className="ml-3 font-bold text-white">${roundsHistory.reduce((s, r) => s + r.price * r.quantity, 0).toFixed(2)}</div>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -7,10 +7,11 @@ import { LatestEvents } from "./components/latest-events";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenuDemo } from "./components/dropdown-button";
 import { DialogDemo } from "./components/dialog-demo";
-import AuctionForm from "./components/auction-form";
 import ResourceList from "./components/resource-list";
 import ToastProvider from "./components/toast-provider";
 import ActiveBids from "./components/active-bids";
+import Ticker from "./components/ticker2";
+import SellMarket from "./components/sell-market";
 
 const countries: string[] = [
   "World",
@@ -140,7 +141,7 @@ function App() {
               </div>
               <MarketHealthPanel />
               <div className="mt-2">
-                <AuctionForm sellerCountry={repCountry} currentCountry={country} availableResources={getResourcesForCountry(country)} />
+                <SellMarket />
               </div>
               <div>
                 <ResourceList />
@@ -158,11 +159,16 @@ function App() {
 
           {currentPage === "analytics" && <div className="space-y-4"></div>}
 
-          {currentPage === "sell" && <div className="space-y-4"><DialogDemo buttonText="Sell"/></div>}
+          {currentPage === "sell" && (
+            <div className="space-y-4">
+              <SellMarket />
+            </div>
+          )}
 
           {currentPage === "buy" && <div className="space-y-4"><DialogDemo buttonText="Buy"/></div>}
         </main>
       </>
+      <Ticker />
     </ToastProvider>
   );
 }
