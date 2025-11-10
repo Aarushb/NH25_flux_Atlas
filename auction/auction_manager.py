@@ -97,13 +97,16 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
     for cluster_enum in CountryClusters:
         cluster_info = cluster_enum.value
         # Use helper from cluster.py
-        cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world)
+        # --- [THIS IS THE FIX] ---
+        # Pass the seller to the batch calculator
+        cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world, seller=seller)
     
     print("\n[Phase 2: Verifying batch assignments...]")
     total_planned_quantity = 0.0
     for cluster_enum in CountryClusters:
         cluster_info = cluster_enum.value
-        print(f"  {cluster_info.name:<28}: Assigned {cluster_info.auction_quantity:6.2f} units")
+        # Use helper from cluster.py (get_num_batches)
+        print(f"  {cluster_info.name:<28}: Assigned {cluster_info.auction_quantity:6.2f} units (Batches: {cluster_info.get_num_batches()})")
         total_planned_quantity += cluster_info.auction_quantity
     print(f"  {'-'*28}: {'-'*6}")
     print(f"  {'Total Planned Quantity':<28}: {total_planned_quantity:6.2f} (Should match {total_quantity})")
@@ -128,8 +131,8 @@ def run_simulation(seller: Country, resource_name: str, total_quantity: float, b
         for batch_num in sorted_batch_nums:
             quantity = cluster_info.get_batch_quantity(batch_num)
             
-            if quantity == 0:
-                continue # Skip empty batches
+            if quantity is None or quantity == 0:
+                continue # Skip empty/invalid batches
             
             print(f"\n  --- Batch {batch_num} | Quantity: {quantity:.2f} {resource_unit} ---")
 
@@ -295,7 +298,9 @@ def run_bidding_simulation(
     
     for cluster_enum in CountryClusters:
         cluster_info = cluster_enum.value
-        cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world)
+        # --- [THIS IS THE FIX] ---
+        # Pass the seller to the batch calculator
+        cluster_info.assign_auction_quantity(total_quantity, total_countries_in_world, seller=seller_country)
     
     print("\n" + "="*70)
     print("STARTING BIDDING ROUNDS")
@@ -316,7 +321,7 @@ def run_bidding_simulation(
         
         quantity = bidder_cluster.get_batch_quantity(batch_num)
         
-        if quantity == 0 or quantity is None:
+        if quantity is None or quantity == 0:
             continue
         
         print(f"\n{'='*70}")
