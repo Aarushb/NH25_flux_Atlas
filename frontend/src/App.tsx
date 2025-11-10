@@ -8,6 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { DropdownMenuDemo } from "./components/dropdown-button";
 import { DialogDemo } from "./components/dialog-demo";
 import AuctionForm from "./components/auction-form";
+import ResourceList from "./components/resource-list";
+import ToastProvider from "./components/toast-provider";
+import ActiveBids from "./components/active-bids";
 
 const countries: string[] = [
   "World",
@@ -43,12 +46,25 @@ const countries: string[] = [
   "Australia",
 ];
 
-const resources = ["Aluminum", "Oil", "Natural Gas", "Uranium"];
+const ALL_RESOURCES = ["Aluminum", "Oil", "Natural Gas", "Uranium"];
+
+function getResourcesForCountry(country: string) {
+  const lower = (country || "").toLowerCase();
+  if (lower.includes("united") || lower === "world" || lower.includes("china") || lower.includes("india")) {
+    return ALL_RESOURCES;
+  }
+  if (lower.includes("brazil") || lower.includes("australia") || lower.includes("russia")) {
+    return ["Aluminum", "Uranium"];
+  }
+  return ["Aluminum", "Natural Gas"];
+}
 
 function App() {
   const [currentPage, setCurrentPage] = useState<string>("dashboard");
   const [resource, setResource] = useState<string>("Aluminum");
   const [country, setCountry] = useState<string>("World");
+    const [repName, setRepName] = useState<string | null>(null);
+    const [repCountry, setRepCountry] = useState<string | null>(null); // country used at signup
 
   useEffect(() => {
     const handler = () => setCurrentPage("login");
@@ -56,9 +72,24 @@ function App() {
     return () => window.removeEventListener("navigate:login", handler as EventListener);
   }, []);
 
+  useEffect(() => {
+      try {
+        const n = localStorage.getItem("repName");
+        const c = localStorage.getItem("repCountry");
+        if (n) setRepName(n);
+        if (c) {
+          setRepCountry(c);
+          setCountry(c);
+        }
+      } catch {
+        void 0;
+      }
+    }, []);
+
   return (
-    <>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 glass">
+    <ToastProvider>
+      <>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 glass">
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-semibold">
@@ -68,6 +99,13 @@ function App() {
               {currentPage === "buy" && "Buy Resources"}
               {currentPage === "login" && "Representative login"}
             </h1>
+            {repName && currentPage === "dashboard" && (
+              <div className="ml-4 text-sm text-muted-foreground">Welcome {repName} of {repCountry ?? country}</div>
+            )}
+          </div>
+          <div className="ml-auto">
+              {/* active bids icon */}
+              <ActiveBids />
           </div>
         </header>
         <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 overflow-y-auto">
@@ -76,11 +114,14 @@ function App() {
           {currentPage === "login" && (
             <LoginPage
               countries={countries}
-              onLogin={(_, selectedCountry) => {
-                // simple local navigation; set selected country and go to dashboard
-                if (selectedCountry) setCountry(selectedCountry);
-                setCurrentPage("dashboard");
-              }}
+                onLogin={(name, selectedCountry) => {
+                  if (selectedCountry) {
+                    setCountry(selectedCountry);
+                    setRepCountry(selectedCountry);
+                  }
+                  setRepName(name);
+                  setCurrentPage("dashboard");
+                }}
             />
           )}
           {currentPage === "dashboard" && (
@@ -89,7 +130,7 @@ function App() {
                 <DropdownMenuDemo
                   value={resource}
                   setValue={setResource}
-                  values={resources}
+                  values={getResourcesForCountry(country)}
                 />
                 <DropdownMenuDemo
                   value={country}
@@ -99,7 +140,10 @@ function App() {
               </div>
               <MarketHealthPanel />
               <div className="mt-2">
-                <AuctionForm />
+                <AuctionForm sellerCountry={repCountry} currentCountry={country} availableResources={getResourcesForCountry(country)} />
+              </div>
+              <div>
+                <ResourceList />
               </div>
               <div className="grid gap-4 md:grid-cols-1">
                 <div className="h-[480px] md:h-[820px]">
@@ -118,7 +162,8 @@ function App() {
 
           {currentPage === "buy" && <div className="space-y-4"><DialogDemo buttonText="Buy"/></div>}
         </main>
-    </>
+      </>
+    </ToastProvider>
   );
 }
 

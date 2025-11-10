@@ -49,27 +49,27 @@
 
 
 :root {
-  --radius: 0; /* square corners for Bloomberg-like aesthetic */
-  --background: #1a2421; 
-  --foreground: #F5F3F0;
-  --card: rgba(255,255,255,0.03);
+  --radius: 0; 
+  --background: #04140d; 
+  --foreground: #F3FBF6; 
+  --card: rgba(255,255,255,0.035);
   --card-foreground: var(--foreground);
-  --popover: rgba(255,255,255,0.02);
+  --popover: rgba(255,255,255,0.03);
   --popover-foreground: var(--foreground);
-  --primary: #008080;
-  --primary-foreground: #F5F3F0;
-  --secondary: rgba(0,128,128,0.12);
+  --primary: #00c28f; 
+  --primary-foreground: #F3FBF6;
+  --secondary: rgba(0,194,143,0.12);
   --secondary-foreground: var(--foreground);
-  --muted: rgba(245,243,240,0.06);
-  --muted-foreground: rgba(245,243,240,0.6);
-  --accent: #008080;
+  --muted: rgba(240,248,244,0.03);
+  --muted-foreground: rgba(240,248,244,0.6);
+  --accent: #00ff7f; 
   --accent-foreground: var(--foreground);
   --destructive: rgba(255,85,85,0.12);
-  --border: rgba(245,243,240,0.06);
-  --input: rgba(245,243,240,0.04);
-  --ring: rgba(0,128,128,0.18);
+  --border: rgba(255,255,255,0.05);
+  --input: rgba(255,255,255,0.03);
+  --ring: rgba(0,255,127,0.22);
   --chart-1: #00ff7f;
-  --chart-2: #008080;
+  --chart-2: #00c28f;
   --chart-3: #4ad9d9;
   --chart-4: #66ffc2;
   --chart-5: #2ee6e6;
@@ -113,24 +113,27 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 13px; 
+    line-height: 1.22;
   }
 
   .glass {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));
-    border: 1px solid rgba(255,255,255,0.03);
-    backdrop-filter: blur(6px) saturate(120%);
-    -webkit-backdrop-filter: blur(6px) saturate(120%);
+    background: linear-gradient(180deg, rgba(4,16,12,0.64), rgba(6,16,12,0.36));
+    border: 1px solid rgba(0,255,127,0.08);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
     color: var(--foreground);
   }
 
-  /* Bloomberg-like: square cards and denser spacing */
   .card {
-    background: var(--card);
+    background: rgba(6,12,10,0.7);
     color: var(--card-foreground);
     border-radius: var(--radius);
-    border: 1px solid rgba(255,255,255,0.03);
+    border: 1px solid rgba(0,255,127,0.06);
     padding: 0.75rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.7);
+    font-size: 13px;
+    line-height: 1.12;
   }
 
   button,
@@ -141,9 +144,9 @@
   input[type="submit"] {
     background: transparent;
     color: var(--foreground);
-    border: 1px solid rgba(0,255,127,0.18);
+  border: 1px solid rgba(0,255,127,0.28);
     padding: 0.45rem 0.65rem;
-    border-radius: 0; /* square buttons */
+    border-radius: 0; 
     transition: box-shadow 120ms ease, transform 100ms ease, border-color 120ms ease;
     font-weight: 600;
     letter-spacing: 0.01em;
@@ -156,7 +159,7 @@
   input[type="button"]:hover,
   input[type="submit"]:hover {
     border-color: #00ff7f;
-    box-shadow: 0 0 12px #00ff7f22, 0 6px 18px rgba(0,0,0,0.45);
+    box-shadow: 0 0 28px rgba(0,255,127,0.22), 0 10px 30px rgba(0,0,0,0.64);
     transform: translateY(-1px);
   }
 
@@ -169,6 +172,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+header {
+  height: 48px;
+  min-height: 48px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+header .text-lg {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.landing-inner { padding: 4rem; }
+.landing-title { font-size: 1.4rem; }
+
+.market-health { gap: 0.5rem; }
+.market-health .card { padding: 0.6rem; }
+
+button, .btn { padding: 0.35rem 0.5rem; font-size: 13px; }
 
 @layer base {
   :root {
@@ -201,62 +225,58 @@
 
 @keyframes neon-pulse {
   0% {
-    stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 3px rgba(0,255,127,0.40));
+    stroke-opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(0,255,127,0.5));
   }
   50% {
     stroke-opacity: 1;
-    filter: drop-shadow(0 0 8px rgba(0,255,127,0.8));
+    filter: drop-shadow(0 0 16px rgba(0,255,127,0.95));
   }
   100% {
-    stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 3px rgba(0,255,127,0.40));
+    stroke-opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(0,255,127,0.5));
   }
 }
 
 .geo {
-  fill: #0f2623;
-  stroke: rgba(255,255,255,0.03);
+  fill: #04120b; 
+  stroke: rgba(230,230,230,0.05);
   stroke-width: 0.5;
   transition: fill 150ms ease, stroke 150ms ease, stroke-width 150ms ease, filter 200ms ease;
 }
 .geo:hover {
-  fill: #12322f;
-  stroke: rgba(255,255,255,0.06);
-  stroke-width: 0.8;
+  fill: #072a23;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 1;
 }
 .selected-geo {
   stroke: #00ff7f;
-  stroke-width: 0.4;
-  filter: drop-shadow(0 0 4px rgba(0,255,127,0.35));
-  animation: neon-pulse 2.8s ease-in-out infinite;
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 16px rgba(0,255,127,0.55));
+  animation: neon-pulse 2s ease-in-out infinite;
 }
 
-/* Market health card micro-interactions */
 .market-health .card {
   transition: transform 420ms cubic-bezier(.16,.84,.44,1), box-shadow 420ms ease, border-color 280ms ease;
   will-change: transform, box-shadow;
   transform: translateZ(0);
 }
 .market-health .card:hover {
-  transform: translateY(-10px) scale(1.01);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 28px rgba(0,255,127,0.06);
-  border-color: rgba(0,255,127,0.06);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 28px 86px rgba(0,0,0,0.75), 0 0 40px rgba(0,255,127,0.16);
+  border-color: rgba(0,255,127,0.12);
 }
 .market-health .card:active { transform: translateY(-6px) scale(1.005); }
 
-/* Neon inner glow for charts on hover */
 .market-health .card:hover svg path,
 .market-health .card:hover svg circle,
 .market-health .card:hover svg polygon {
   filter: drop-shadow(0 0 6px rgba(0,255,127,0.14));
 }
 
-/* Subtle parallax using pointer movement (fallback to hover translate) */
 .market-health .card[data-parallax="true"] { perspective: 800px; }
 .market-health .card[data-parallax="true"]:hover { transform-style: preserve-3d; }
 
-/* Smooth transform on the inner parallax wrapper */
 .parallax-inner {
   transition: transform 420ms cubic-bezier(.16,.84,.44,1);
   will-change: transform;

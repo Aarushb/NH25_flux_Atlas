@@ -1,56 +1,56 @@
 import { useEffect, useState } from "react";
 
-export default function AuctionForm() {
-  const [countries, setCountries] = useState<string[]>([]);
-  const [resources, setResources] = useState<{ name: string; base_price?: number }[]>([]);
-  const [seller, setSeller] = useState("");
-  const [resource, setResource] = useState("");
+interface AuctionFormProps {
+  sellerCountry?: string | null; 
+  currentCountry?: string; 
+  availableResources?: string[]; 
+}
+
+export default function AuctionForm({ sellerCountry, currentCountry, availableResources }: AuctionFormProps) {
+  const [resources, setResources] = useState<string[]>(availableResources ?? []);
+  const [resource, setResource] = useState(availableResources?.[0] ?? "");
   const [quantity, setQuantity] = useState(0);
   const [basePrice, setBasePrice] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    fetch("/countries")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!mounted) return;
-        const names = Array.isArray(data) ? data.map((c: any) => (c?.name ?? c?.country ?? c?.id ?? String(c))) : [];
-        setCountries(names);
-        if (names.length) setSeller(names[0]);
-      })
-      .catch(() => {});
+    if (availableResources && availableResources.length) {
+      setResources(availableResources);
+      setResource(availableResources[0]);
+      return;
+    }
 
     fetch("/resources")
       .then((r) => r.json())
       .then((data) => {
         if (!mounted) return;
-        const list = Array.isArray(data)
-          ? data.map((res: unknown) => {
-              const r = res as Record<string, unknown>;
-              return { name: (r.name ?? r.id ?? String(r)) as string, base_price: (r.base_price ?? r.basePrice) as number | undefined };
-            })
-          : [];
-        setResources(list as { name: string; base_price?: number }[]);
-        if (list.length) {
-          setResource(list[0].name);
-          setBasePrice(list[0].base_price as number | undefined);
-        }
+        const list = Array.isArray(data) ? data.map((r: unknown) => {
+          const rr = r as Record<string, unknown>;
+          return String(rr?.name ?? rr?.id ?? r);
+        }) : [];
+        const filtered = (list.length ? list : ["Aluminum", "Oil", "Natural Gas", "Uranium"]).filter((name) => {
+          if (!currentCountry) return true;
+          const low = currentCountry.toLowerCase();
+          if (low.includes("united") || low === "world") return true;
+          if (low.includes("somalia") || low.includes("chad")) return name !== "Uranium";
+          return true;
+        });
+        setResources(filtered);
+        if (filtered.length) setResource(filtered[0]);
       })
-      .catch(() => {});
+      .catch(() => {
+        const fallback = ["Aluminum", "Natural Gas"];
+        setResources(fallback);
+        setResource(fallback[0]);
+      });
 
     return () => {
       mounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const res = resources.find((r) => r.name === resource);
-    setBasePrice(res?.base_price ?? undefined);
-  }, [resource, resources]);
+  }, [availableResources, currentCountry]);
 
   const validate = () => {
-    if (!seller) return "Choose a seller";
     if (!resource) return "Choose a resource";
     if (!quantity || quantity <= 0) return "Quantity must be > 0";
     return null;
@@ -65,24 +65,24 @@ export default function AuctionForm() {
     }
 
     const body = {
-      seller_country: seller,
+      seller_country: sellerCountry ?? "",
       resource_name: resource,
       total_quantity: Number(quantity),
       base_price: Number(basePrice ?? 0),
     };
 
     try {
-      setStatus("Simulating auction...");
-      const res = await fetch("/simulate-auction", {
+      setStatus("Selling on market...");
+      const res = await fetch("/sell", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      setStatus("Simulation complete");
-      console.debug("simulate result", data);
-      // broadcast an event so dashboard components can react
-      window.dispatchEvent(new CustomEvent('auction:simulated', { detail: data }));
+      setStatus("Listed on market");
+      console.debug("sell result", data);
+      
+      window.dispatchEvent(new CustomEvent("auction:simulated", { detail: data }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setStatus(msg ?? "Error");
@@ -92,18 +92,10 @@ export default function AuctionForm() {
   return (
     <form onSubmit={onSubmit} className="auction-form grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
       <div>
-        <label className="text-xs text-muted-foreground">Seller</label>
-        <select value={seller} onChange={(e) => setSeller(e.target.value)} className="w-full">
-          {countries.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-      </div>
-      <div>
         <label className="text-xs text-muted-foreground">Resource</label>
         <select value={resource} onChange={(e) => setResource(e.target.value)} className="w-full">
           {resources.map((r) => (
-            <option key={r.name} value={r.name}>{r.name}</option>
+            <option key={r} value={r}>{r}</option>
           ))}
         </select>
       </div>
@@ -116,7 +108,7 @@ export default function AuctionForm() {
         <input type="number" step="0.0001" value={basePrice ?? 0} onChange={(e) => setBasePrice(Number(e.target.value))} className="w-full" />
       </div>
       <div className="sm:col-span-4">
-        <button type="submit" className="btn">Simulate Auction</button>
+        <button type="submit" className="btn">Sell on market</button>
         {status && <div className="text-xs text-muted-foreground mt-1">{status}</div>}
       </div>
     </form>

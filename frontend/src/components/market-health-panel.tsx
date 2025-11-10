@@ -20,24 +20,22 @@ function ParallaxWrapper({ children }: { children: React.ReactNode }) {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 .. 0.5
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
-    const tx = px * 10; // translateX px
-    const ty = py * 8; // translateY px
-    const rx = -py * 4; // rotateX deg
-    const ry = px * 6; // rotateY deg
+    const tx = px * 8;
+    const ty = py * 6;
+    const rx = -py * 3;
+    const ry = px * 5;
 
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
-      setStyle({
-        transform: `perspective(900px) translate3d(${tx}px, ${ty}px, 0) rotateX(${rx}deg) rotateY(${ry}deg)`,
-      });
+      setStyle({ transform: `perspective(900px) translate3d(${tx}px, ${ty}px, 0) rotateX(${rx}deg) rotateY(${ry}deg)` });
     });
   };
 
   const onLeave = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    setStyle({ transform: "perspective(900px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg)" });
+    setStyle({ transform: "none" });
   };
 
   return (
@@ -51,24 +49,22 @@ function CountUp({ to, duration = 1800, start = true, startDelay = 0 }: { to: nu
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!start) return;
-  let raf = 0;
+    let raf = 0;
     let cancelled = false;
     const run = () => {
-      const t0 = performance.now();
+      const startTime = performance.now();
       const step = (now: number) => {
         if (cancelled) return;
-        const raw = Math.min(1, (now - t0) / duration);
+        const raw = Math.min(1, (now - startTime) / duration);
         const t = easeOutCubic(raw);
         setValue(Math.floor(to * t));
         if (raw < 1) raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
     };
-
     let timer: number | undefined;
     if (startDelay > 0) timer = window.setTimeout(run, startDelay);
     else run();
-
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
@@ -84,20 +80,19 @@ function Sparkline({ data = [4, 8, 6, 10, 12, 9], start = true, startDelay = 0 }
   const h = 40;
   const max = Math.max(...data);
   const points = data.map((d, i) => `${(i / (data.length - 1)) * w},${h - (d / max) * h}`);
-  const d = `M ${points.map((p) => p.replace(",", " ")).join(" L ")}`;
+  const pathD = `M ${points.map((p) => p.replace(",", " ")).join(" L ")}`;
   const pathRef = useRef<SVGPathElement | null>(null);
 
   useEffect(() => {
     const path = pathRef.current;
-    if (!path) return;
-    if (!start) return;
+    if (!path || !start) return;
     let raf = 0;
     let cancelled = false;
     const run = () => {
       const len = path.getTotalLength();
       path.style.strokeDasharray = String(len);
       path.style.strokeDashoffset = String(len);
-  const duration = 1400;
+      const duration = 1400;
       const t0 = performance.now();
       const step = (now: number) => {
         if (cancelled) return;
@@ -116,11 +111,11 @@ function Sparkline({ data = [4, 8, 6, 10, 12, 9], start = true, startDelay = 0 }
       cancelAnimationFrame(raf);
       if (timer) clearTimeout(timer);
     };
-  }, [d, start, startDelay]);
+  }, [pathD, start, startDelay]);
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" aria-hidden>
-      <path ref={pathRef} d={d} fill="none" stroke="#00ff7f" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <path ref={pathRef} d={pathD} fill="none" stroke="#00ff7f" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -137,7 +132,7 @@ function CircularProgress({ percent = 65, start = true, startDelay = 0 }: { perc
     let raf = 0;
     let cancelled = false;
     const run = () => {
-  const duration = 1600;
+      const duration = 1600;
       const t0 = performance.now();
       const startOffset = circumference;
       const step = (now: number) => {
@@ -187,7 +182,7 @@ function SpiderChart({ values = [0.6, 0.7, 0.5, 0.8, 0.65], start = true, startD
     let raf = 0;
     let cancelled = false;
     const run = () => {
-  const duration = 1400;
+      const duration = 1400;
       const t0 = performance.now();
       const step = (now: number) => {
         if (cancelled) return;
@@ -230,19 +225,9 @@ function SpiderChart({ values = [0.6, 0.7, 0.5, 0.8, 0.65], start = true, startD
 
 export default function MarketHealthPanel() {
   const [ready, setReady] = useState(false);
-  const [open, setOpen] = useState([true, true, true]);
-
-  const toggle = (i: number) => {
-    setOpen((prev) => {
-      const copy = [...prev];
-      copy[i] = !copy[i];
-      return copy;
-    });
-  };
 
   useEffect(() => {
     const onGone = () => setReady(true);
-    // If landing hero is not present, start immediately
     const landing = document.querySelector('.landing-hero');
     if (!landing) {
       setReady(true);
@@ -254,63 +239,43 @@ export default function MarketHealthPanel() {
 
   return (
     <div className="market-health grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
-      <Card data-parallax="true">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-sm text-muted-foreground">Projected Global Welfare Score</div>
-          <button className="btn" onClick={() => toggle(0)} aria-expanded={open[0]} aria-controls="mh-1">
-            {open[0] ? "−" : "+"}
-          </button>
-        </div>
-        {open[0] && (
-          <ParallaxWrapper>
-            <CardContent id="mh-1" className="flex flex-col gap-2 items-start">
-              <div className="flex items-center gap-4 w-full justify-between">
-                <div className="flex flex-col">
-                  <CountUp to={87} start={ready} startDelay={350} />
-                  <div className="text-xs text-muted-foreground">Economic Value Creation</div>
-                </div>
-                <div className="ml-auto">
-                  <Sparkline start={ready} startDelay={700} />
-                </div>
+      <Card data-parallax="true" className="glass card">
+        <ParallaxWrapper>
+          <CardContent className="flex flex-col gap-2 items-start">
+            <div className="text-sm text-muted-foreground">Projected Global Welfare Score</div>
+            <div className="flex items-center gap-4 w-full justify-between">
+              <div className="flex flex-col">
+                <CountUp to={87} start={ready} startDelay={350} />
+                <div className="text-xs text-muted-foreground">Economic Value Creation</div>
               </div>
-            </CardContent>
-          </ParallaxWrapper>
-        )}
+              <div className="ml-auto">
+                <Sparkline start={ready} startDelay={700} />
+              </div>
+            </div>
+          </CardContent>
+        </ParallaxWrapper>
       </Card>
 
-      <Card data-parallax="true">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-sm text-muted-foreground">Carbon Reduction</div>
-          <button className="btn" onClick={() => toggle(1)} aria-expanded={open[1]} aria-controls="mh-2">
-            {open[1] ? "−" : "+"}
-          </button>
-        </div>
-        {open[1] && (
-          <ParallaxWrapper>
-            <CardContent id="mh-2" className="flex flex-col items-center justify-center gap-2">
-              <CircularProgress percent={65} start={ready} startDelay={1100} />
-              <div className="text-xs text-muted-foreground">65% Reduction</div>
-            </CardContent>
-          </ParallaxWrapper>
-        )}
+      <Card data-parallax="true" className="glass card">
+        <ParallaxWrapper>
+          <CardContent className="flex flex-col items-center justify-center gap-2">
+            <div className="text-sm text-muted-foreground">Carbon Reduction</div>
+            <CircularProgress percent={65} start={ready} startDelay={1100} />
+            <div className="text-xs text-muted-foreground">65% Reduction</div>
+          </CardContent>
+        </ParallaxWrapper>
       </Card>
 
-      <Card data-parallax="true">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-sm text-muted-foreground">Fairness Index</div>
-          <button className="btn" onClick={() => toggle(2)} aria-expanded={open[2]} aria-controls="mh-3">
-            {open[2] ? "−" : "+"}
-          </button>
-        </div>
-        {open[2] && (
-          <ParallaxWrapper>
-            <CardContent id="mh-3" className="flex flex-col items-center gap-2">
-              <SpiderChart start={ready} startDelay={1500} />
-              <div className="text-xs text-muted-foreground">Current vs Ideal</div>
-            </CardContent>
-          </ParallaxWrapper>
-        )}
+      <Card data-parallax="true" className="glass card">
+        <ParallaxWrapper>
+          <CardContent className="flex flex-col items-center gap-2">
+            <div className="text-sm text-muted-foreground">Fairness Index</div>
+            <SpiderChart start={ready} startDelay={1500} />
+            <div className="text-xs text-muted-foreground">Current vs Ideal</div>
+          </CardContent>
+        </ParallaxWrapper>
       </Card>
     </div>
   );
 }
+
