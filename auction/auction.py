@@ -267,3 +267,29 @@ class Auction:
     
     def __repr__(self) -> str:
         return f"Auction({self.resource_name}, seller={self.seller.name}, quantity={self.quantity}, status={self.status.value})"
+if __name__ == "__main__":
+    print("=== Testing Auction with API ===\n")
+    
+    # Test creating auction from country name
+    auction = Auction.from_country_name(
+        seller_name="United States",
+        resource_name="Lithium",
+        quantity=100.0,
+        asking_price_per_unit=250.0,
+        current_market_price=200.0
+    )
+    
+    print(f"Seller: {auction.seller.name}")
+    print(f"Seller ID: {auction.seller.id}")
+    print(f"Seller Budget: ${auction.seller.budget}B")
+    print(f"Seller has Lithium: {auction.seller.has_resource('Lithium')}")
+    
+    if auction.seller.has_resource('Lithium'):
+        lithium = auction.seller.get_resource('Lithium')
+        print(f"Lithium amount: {lithium.amount} {lithium.unit}")
+    
+    # Try to open bidding
+    if auction.open_bidding():
+        print("\n✓ Auction opened successfully!")
+    else:
+        print("\n✗ Failed to open auction")

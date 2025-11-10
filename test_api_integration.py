@@ -1,6 +1,6 @@
 from models.country import Country
 from models.cluster import ClusterInfo
-from auctions.auction import Auction
+from auction.auction import Auction
 
 # Test 1: Create country from API
 print("=== Test 1: Country from API ===")

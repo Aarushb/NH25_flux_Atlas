@@ -50,3 +50,10 @@ def delete_country(country_id: UUID, deleted_by: str = "system", db: Session = D
         raise HTTPException(status_code=404, detail="Country not found")
     repo.soft_delete(country_id, deleted_by)
     return {"status": "deleted"}
+@router.get("/by-name/{country_name}", response_model=CountryResponse)
+def get_country_by_name(country_name: str, db: Session = Depends(get_db)):
+    repo = CountryRepository(db)
+    country = repo.get_by_name(country_name)
+    if not country:
+        raise HTTPException(status_code=404, detail="Country not found")
+    return country
