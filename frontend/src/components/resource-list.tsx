@@ -204,6 +204,8 @@ export default function ResourceList({ resources = DUMMY }: { resources?: Resour
                                               setMode('bid');
                                                 setRound(1);
                                                 setRoundsHistory([]);
+                                                setRoundsPlaced([]);
+                                                placedRef.current = false;
                                               setBidStatus(null);
                                               window.dispatchEvent(new CustomEvent('auction:started', { detail: { id, resource: selected.name, seller: s.country, price: s.base, quantity: Math.min(1000, Math.max(10, Math.floor(s.units / 10))), round: 1, status: 'started' } }))
                                             }}
