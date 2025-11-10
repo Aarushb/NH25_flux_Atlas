@@ -195,10 +195,7 @@ Once running, API documentation is available at:
 
 ### Running a Basic Simulation
 ```python
-from auction.turn_based_simulation import TurnBasedSimulation
-
-sim = TurnBasedSimulation(max_turns=5)
-sim.run(verbosity="verbose")
+python3 auction_manager.py
 ```
 
 ### Starting Interactive Bidding
