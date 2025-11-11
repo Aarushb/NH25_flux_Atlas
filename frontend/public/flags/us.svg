@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="20" viewBox="0 0 32 20" preserveAspectRatio="xMidYMid meet">
+  <rect width="32" height="20" fill="#b22234"/>
+  <rect y="10" width="32" height="2" fill="#fff"/>
+  <rect y="6" width="32" height="2" fill="#fff"/>
+  <rect y="14" width="32" height="2" fill="#fff"/>
+  <rect x="0" y="0" width="12" height="8" fill="#3c3b6e"/>
+  <text x="6" y="5.6" font-size="5" fill="#fff" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">US</text>
+</svg>
